@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import Webcam from 'react-webcam';
 
 const App = () => {
-  const [photos, setPhotos] = useState<{ base64Image: string; uploadDate: string }[]>([]);
+  const [photos, setPhotos] = useState<{ image: string; uploadDate: string }[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const webcamRef = React.useRef<Webcam>(null);
 
   const capturePhoto = () => {
     const imageSrc = webcamRef.current?.getScreenshot();
-    
+
     if (imageSrc) {
       const blob = dataURItoBlob(imageSrc);
       const file = new File([blob], 'captured-photo.png', { type: 'image/png' });
@@ -21,7 +21,7 @@ const App = () => {
     const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
     const ab = new ArrayBuffer(byteString.length);
     const ia = new Uint8Array(ab);
-    
+
     for (let i = 0; i < byteString.length; i++) {
       ia[i] = byteString.charCodeAt(i);
     }
@@ -32,21 +32,25 @@ const App = () => {
   const uploadPhoto = async () => {
     try {
       if (selectedFile) {
+        const base64Image = await fileToBase64(selectedFile);
         const formData = {
-          uploadDate: new Date().toISOString(),
-          base64Image: await fileToBase64(selectedFile),
+          image: base64Image,
         }
 
-        console.log('formData:', formData);
-  
-        await fetch('http://localhost:3001/api/photos', {
+        const response = await fetch('http://localhost:3001/api/photos', {
           method: 'POST',
           body: JSON.stringify(formData),
+          headers: {
+            'Content-Type': 'application/json',
+          },
         });
-  
+
+        const data = await response.json();
+        console.log('Photo uploaded:', data);
+
         // Actualizar la lista de fotos después de la carga
         fetchPhotos();
-  
+
         // Limpiar la imagen después de la carga
         setSelectedFile(null);
       }
@@ -54,7 +58,7 @@ const App = () => {
       console.error('Error uploading photo:', error);
     }
   };
-  
+
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -70,6 +74,7 @@ const App = () => {
     try {
       const response = await fetch('http://localhost:3001/api/photos');
       const data = await response.json();
+      if (!data) return;
       setPhotos(data);
     } catch (error) {
       console.error('Error fetching photos:', error);
@@ -100,7 +105,7 @@ const App = () => {
         <ul>
           {photos.map((photo, index) => (
             <li key={index}>
-              <img src={photo.base64Image} alt={`Photo ${index}`} />
+              <img src={`data:image/png;base64,${photo.image}`} alt={`Photo ${index}`} style={{ width: 200, height: 150 }} />
               <p>Uploaded on: {new Date(photo.uploadDate).toLocaleString()}</p>
             </li>
           ))}

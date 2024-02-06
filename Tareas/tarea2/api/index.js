@@ -1,57 +1,66 @@
-import express from 'express';
-import bodyParser from 'body-parser';
-import mongoose from 'mongoose';
-import cors from 'cors';
-import Photo from './src/photo.js';
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+
 
 const app = express();
 const PORT = 3001;
 
-// Middleware
-app.use(bodyParser.json());
-app.use(cors()); // Habilita CORS para todas las rutas
+app.use(cors());
 
-// MongoDB Connection
-mongoose.connect('mongodb://database:27017', { useNewUrlParser: true, useUnifiedTopology: true });
+app.use(bodyParser.json({ limit: "50mb" }));
+app.use(bodyParser.urlencoded({ limit: "50mb", extended: true, parameterLimit: 50000 }));
 
-// API Routes
-app.post('/api/photos', async (req, res) => {
-  try {
-    const { base64Image, uploadDate } = req.body;
-
-    // Guardar en MongoDB
-    const photo = new Photo({
-      base64Image,
-      uploadDate
-    });
-
-    await photo.save();
-
-    res.status(201).json({ message: 'Photo saved successfully' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
+mongoose.connect('mongodb://mongodb:27017/tarea2', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
 });
+
+const db = mongoose.connection;
+
+db.on('error', console.error.bind(console, 'connection error:'));
+db.once('open', function () {
+  console.log('Conectado a la base de datos');
+});
+
+const photoSchema = new mongoose.Schema({
+  image: String,
+  uploadDate: Date
+});
+
+const Photo = mongoose.model('Photo', photoSchema);
 
 app.get('/api/photos', async (req, res) => {
   try {
     const photos = await Photo.find();
-    res.status(200).json(photos);
+    res.json(photos);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: 'Error al obtener las fotos' });
   }
 });
 
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'http://localhost:3000'); // Reemplaza con el origen correcto de tu aplicación de frontend
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
-  next();
+app.post('/api/photos', async (req, res) => {
+  try {
+    const { image } = req.body;
+    if (!image) {
+      return res.status(400).json({ error: 'La foto no puede estar vacía' });
+    }
+
+    console.log(image);
+
+    const photo = new Photo({
+      image: image,
+      uploadDate: new Date()
+    });
+    await photo.save();
+    res.json(photo);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: 'Error al guardar la foto' });
+  }
 });
 
-// Start Server
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
