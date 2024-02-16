@@ -18,9 +18,11 @@ static int escribir_a_proc(struct seq_file *file_proc, void *v)
     si_meminfo(&inf);
 
     total = inf.totalram * inf.mem_unit;
-    used = inf.freeram * inf.mem_unit + inf.bufferram * inf.mem_unit + inf.sharedram * inf.mem_unit;
+
+    notused = (inf.freeram * inf.mem_unit) + (inf.bufferram * inf.mem_unit) + (inf.sharedram * inf.mem_unit);
+    used = total - notused;
+    
     porc = (used * 100) / total;
-    notused = total - used;
     seq_printf(file_proc, "{\"totalRam\":%lu, \"memoriaEnUso\":%lu, \"porcentaje\":%lu, \"libre\":%lu }", total, used, porc, notused);
     return 0;
 }

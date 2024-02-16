@@ -55,7 +55,16 @@ const App: React.FC = () => {
     const [info, setInfo] = useState<Info>();
 
     useEffect(() => {
+        // Llama a getInfo inmediatamente
         getInfo();
+
+        // Establece un intervalo para llamar a getInfo cada 5 segundos
+        const intervalId = setInterval(() => {
+            getInfo();
+        }, 5000);
+
+        // Limpia el intervalo al desmontar el componente
+        return () => clearInterval(intervalId);
     }, []);
 
     function getInfo() {
