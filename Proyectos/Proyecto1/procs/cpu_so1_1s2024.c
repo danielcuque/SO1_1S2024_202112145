@@ -1,11 +1,3 @@
-// Módulo de CPU
-// Este módulo deberá de estar alojado en un archivo ubicado en el directorio /proc.
-// Características:
-// ● Importar la librería <linux/sched.h>, <linux/sched/signal.h>
-// ● La información que se mostrará en el módulo debe ser obtenida por medio de los struct de
-// información del sistema operativo y no por otro medio.
-// ● El nombre del módulo será: cpu_so1_1s2024
-
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>

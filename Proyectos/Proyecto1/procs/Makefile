@@ -1,3 +1,4 @@
+obj-m += cpu_module.o
 obj-m += ram_module.o
 
 all:
@@ -5,3 +6,4 @@ all:
 
 clean:
 	make -C "/lib/modules/$(shell uname -r)/build" M="$(PWD)" clean
+
