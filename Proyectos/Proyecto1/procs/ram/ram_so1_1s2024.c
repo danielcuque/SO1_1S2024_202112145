@@ -1,6 +1,6 @@
 #include <linux/module.h>
 #include <linux/proc_fs.h>
-#include <linux/sysinfo.h> // ram 
+#include <linux/sysinfo.h> 
 #include <linux/seq_file.h>
 #include <linux/mm.h>
 
@@ -11,7 +11,7 @@ MODULE_VERSION("1.0");
 
 struct sysinfo inf;
 
-static int escribir_a_proc(struct seq_file *file_proc, void *v)
+static int write_a_proc(struct seq_file *file_proc, void *v)
 {
     unsigned long total, used, notused;
     unsigned long porc;
@@ -29,9 +29,9 @@ static int escribir_a_proc(struct seq_file *file_proc, void *v)
 
 static int abrir_aproc(struct inode *inode, struct file *file)
 {
-    return single_open(file, escribir_a_proc, NULL);
+    return single_open(file, write_a_proc, NULL);
 }
-// Operaciones de Kernel Superior a 5.6
+
 static struct proc_ops archivo_operaciones = {
     .proc_open = abrir_aproc,
     .proc_read = seq_read
@@ -39,19 +39,16 @@ static struct proc_ops archivo_operaciones = {
 
 static int __init modulo_init(void)
 {
-    proc_create("modulo_ram", 0, NULL, &archivo_operaciones);
+    proc_create("ram_so1_1s2024", 0, NULL, &archivo_operaciones);
     printk(KERN_INFO "Modulo RAM montado\n");
     return 0;
 }
 
 static void __exit modulo_cleanup(void)
 {
-    remove_proc_entry("modulo_ram", NULL);
+    remove_proc_entry("ram_so1_1s2024", NULL);
     printk(KERN_INFO "Modulo RAM eliminado \n");
 }
 
 module_init(modulo_init);
 module_exit(modulo_cleanup);
-
-// ----------- sudo dmesg -C    limpia la consola
-// ----------- sudo dmesg       muestra los mensajes
