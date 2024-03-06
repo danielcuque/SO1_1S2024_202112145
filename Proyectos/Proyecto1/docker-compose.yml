@@ -1,0 +1,37 @@
+# Docker compose to handle golang api, mysql and react app
+version: '3.1'
+
+services:
+  db:
+    image: mysql:5.7
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: proyecto1
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql:/var/lib/mysql
+  api:
+    build: ./api
+    container_name: api
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+  web:
+    build: ./frontend
+    container_name: frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+
+volumes:
+  mysql:
+
