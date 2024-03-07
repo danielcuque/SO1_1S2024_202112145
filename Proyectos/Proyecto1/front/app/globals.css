@@ -2,3 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
+.card {
+    @apply bg-white hover:shadow-md border-[1px] border-gray-200 rounded-xl p-4 h-full text-center items-center justify-center flex font-medium text-2xl;
+}
