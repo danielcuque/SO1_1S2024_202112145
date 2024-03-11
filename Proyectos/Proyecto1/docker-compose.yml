@@ -19,7 +19,7 @@ services:
     build:
       context: ./front
     ports:
-      - "80:3000"
+      - "80:80"
 
 volumes:
   mysql_data:
