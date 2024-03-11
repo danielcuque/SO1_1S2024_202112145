@@ -1,7 +1,7 @@
 export default function Historico() {
     return (
         <div>
-        Monitoreo
+            <h1 className="text-3xl font-semibold text-center">Registros históricos</h1>
         </div>
     );
 }
