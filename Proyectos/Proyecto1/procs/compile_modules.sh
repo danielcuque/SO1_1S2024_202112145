@@ -3,12 +3,12 @@
 
 cd ram/
 make all
-sudo insmod ram_module.ko
+sudo insmod ram_so1_1s2024.ko
 make clean
 
 cd ..
 
 cd cpu/
 make all
-sudo insmod cpu_module.ko
+sudo insmod cpu_so1_1s2024
 make clean
