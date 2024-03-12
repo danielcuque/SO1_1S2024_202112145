@@ -41,7 +41,12 @@ export default function Monitoreo() {
                     }
                 }
             )
-            if (response.ok) return await response.json()
+            if (response.ok) {
+                const jsonResponse = await response.json();
+
+                console.log(jsonResponse, typeof jsonResponse)
+                return jsonResponse as T;
+            }
 
             return mockInfoRam as T;
         } catch (error) {
