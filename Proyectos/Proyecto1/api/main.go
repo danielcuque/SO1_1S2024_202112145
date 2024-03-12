@@ -10,7 +10,7 @@ import (
 type InfoCpu struct{}
 
 func infoRamHandler(w http.ResponseWriter, r *http.Request) {
-	cmd := exec.Command("sh", "-c", "cat /proc/modulo_ram")
+	cmd := exec.Command("sh", "-c", "cat /proc/ram_so1_1s2024")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		http.Error(w, "Error al obtener la información del módulo RAM", http.StatusInternalServerError)
