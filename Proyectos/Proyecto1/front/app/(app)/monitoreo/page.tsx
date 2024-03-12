@@ -42,8 +42,8 @@ export default function Monitoreo() {
                 }
             )
             if (response.ok) {
-                const jsonResponse = await response.json();
-
+                const strResponse = await response.json();
+                const jsonResponse = JSON.parse(strResponse);
                 console.log(jsonResponse, typeof jsonResponse)
                 return jsonResponse as T;
             }
