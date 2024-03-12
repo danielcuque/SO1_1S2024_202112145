@@ -7,13 +7,6 @@ import (
 	"os/exec"
 )
 
-type InfoRam struct {
-	TotalRam     int `json:"totalRam"`
-	MemoriaEnUso int `json:"memoriaEnUso"`
-	Porcentaje   int `json:"porcentaje"`
-	Libre        int `json:"libre"`
-}
-
 type InfoCpu struct{}
 
 func infoRamHandler(w http.ResponseWriter, r *http.Request) {
@@ -25,22 +18,11 @@ func infoRamHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var response InfoRam
-	err = json.Unmarshal(out, &response)
-	if err != nil {
-		http.Error(w, "Error al parsear la información del módulo RAM", http.StatusInternalServerError)
-		fmt.Println(err)
-		return
-	}
+	output := string(out[:])
 
-	// Escribir la respuesta en formato JSON
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(response)
-	if err != nil {
-		http.Error(w, "Error al escribir la respuesta JSON", http.StatusInternalServerError)
-		fmt.Println(err)
-		return
-	}
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(output)
 }
 
 func main() {
