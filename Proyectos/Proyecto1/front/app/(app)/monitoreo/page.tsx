@@ -1,7 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { MemoryChart } from "@/components/Graph/Graph";
-import { useState } from "react";
 
 interface InfoRam {
     totalRam: number;
@@ -10,10 +10,53 @@ interface InfoRam {
     libre: number;
 }
 
+const mockInfoRam: InfoRam = { "totalRam": 4102373376, "memoriaEnUso": 3463741440, "porcentaje": 84, "libre": 638631936 }
+const conversionToGb = 1024 * 1024 * 1024;
+
 export default function Monitoreo() {
 
     const [infoCpu, setInfoCpu] = useState<number[]>([100, 200])
     const [infoRam, setInfoRam] = useState<number[]>([100, 300])
+
+    useEffect(() => {
+       setInfo();
+
+        // Establece un intervalo para llamar a getInfo cada 5 segundos
+        const intervalId = setInterval(() => {
+            setInfo();
+        }, 5000);
+
+        // Limpia el intervalo al desmontar el componente
+        return () => clearInterval(intervalId);
+    }, []);
+
+    const getInfo = async <T= any>(url: string): Promise<T> => {
+        try {
+            const response = await fetch(
+                url,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }
+            )
+            if (response.ok) return await response.json()
+
+            return mockInfoRam as T;
+        } catch (error) {
+            console.log(error)
+            return mockInfoRam as T;
+        }
+    }
+
+    const setInfo = async () => {
+        const ramResponse = await getInfo<InfoRam>('/api/ram');
+        const { memoriaEnUso, libre } = ramResponse
+        
+        setInfoRam([memoriaEnUso, libre])
+    }
+
 
     return (
         <div className="mt-10 mx-8">
@@ -24,10 +67,7 @@ export default function Monitoreo() {
                     <h2 className="text-xl text-center mt-4">Memoria RAM</h2>
                     {
                         infoRam && (
-                            <MemoryChart data={[
-                                100,
-                                200
-                            ]}
+                            <MemoryChart data={infoRam}
 
                                 labels={[
                                     'Utilizado',
@@ -41,10 +81,7 @@ export default function Monitoreo() {
                     <h2 className="text-xl text-center mt-4">CPU</h2>
                     {
                         infoCpu && (
-                            <MemoryChart data={[
-                                100,
-                                200
-                            ]}
+                            <MemoryChart data={infoCpu}
                                 labels={[
                                     'Uso de CPU',
                                     'Libre'

@@ -24,8 +24,8 @@ export const MemoryChart: React.FC<MemoryChartProps> = ({ data, labels }) => {
                 labels,
                 datasets: [{
                     data: data || [0, 0],
-                    backgroundColor: ['#FF6384', '#36A2EB'],
-                    hoverBackgroundColor: ['#FF6384', '#36A2EB'],
+                    backgroundColor: ['#ADD8E6', '#4682B4'],
+                    hoverBackgroundColor: ['#ADD8E6', '#4682B4'],
                 }],
             },
             options: {
