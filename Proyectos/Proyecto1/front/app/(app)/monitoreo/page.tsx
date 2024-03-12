@@ -57,9 +57,12 @@ export default function Monitoreo() {
 
     const setInfo = async () => {
         const ramResponse = await getInfo<InfoRam>('/api/ram');
-        const { memoriaEnUso, libre } = ramResponse
+        const { memoriaEnUso, libre } = ramResponse;
+
+        const memoriaEnUsoGb = memoriaEnUso / conversionToGb;
+        const libreGb = libre / conversionToGb;
         
-        setInfoRam([memoriaEnUso, libre])
+        setInfoRam([memoriaEnUsoGb, libreGb]);
     }
 
 
