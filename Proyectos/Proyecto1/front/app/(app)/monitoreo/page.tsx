@@ -43,9 +43,8 @@ export default function Monitoreo() {
             )
             if (response.ok) {
                 const strResponse = await response.json();
-                const jsonResponse = JSON.parse(strResponse);
-                console.log(jsonResponse, typeof jsonResponse)
-                return jsonResponse as T;
+                console.log(strResponse)
+                return strResponse as T;
             }
 
             return mockInfoRam as T;
@@ -56,7 +55,8 @@ export default function Monitoreo() {
     }
 
     const setInfo = async () => {
-        const ramResponse = await getInfo<InfoRam>('/api/ram');
+        const ramResponseStr = await getInfo<string>('/api/ram');
+        const ramResponse = JSON.parse(ramResponseStr) as InfoRam;
         const cpuResponse = await getInfo<string>('/api/cpu');
     
         const freeCpuStr = cpuResponse.trim().replace(',', '.');
