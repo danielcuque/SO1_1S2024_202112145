@@ -26,7 +26,7 @@ func infoRamHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func infoCpuHandler(w http.ResponseWriter, r *http.Request) {
-	cmd := exec.Command("mpstat")
+	cmd := exec.Command("mpstat | awk 'NR==4 {print $NF}'")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		http.Error(w, "Error al obtener la información de la CPU", http.StatusInternalServerError)
