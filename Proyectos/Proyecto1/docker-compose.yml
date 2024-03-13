@@ -9,6 +9,8 @@ services:
       - mysql_data:/data/db
   api:
     build: ./api
+    volumes:
+      - /proc:/proc
     container_name: api
     restart: always
     ports:
