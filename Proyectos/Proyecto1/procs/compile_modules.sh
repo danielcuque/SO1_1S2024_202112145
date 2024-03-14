@@ -6,9 +6,9 @@ make all
 sudo insmod ram_so1_1s2024.ko
 make clean
 
-# cd ..
+cd ..
 
-# cd cpu/
-# make all
-# sudo insmod cpu_so1_1s2024
-# make clean
+cd cpu/
+make all
+sudo insmod cpu_so1_1s2024
+make clean

@@ -1,24 +1,50 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os/exec"
+	"time"
 )
 
-type InfoCpu struct{}
+var db *sql.DB
+
+func dbConnection() {
+	var err error
+	db, err = sql.Open("mysql", "root:root@tcp(localhost:3306)/monitoring")
+	if err != nil {
+		fmt.Println("Error al conectar con la base de datos")
+		return
+	}
+
+	err = db.Ping()
+	if err != nil {
+		fmt.Println("Error al conectar con la base de datos")
+		return
+	}
+
+	fmt.Println("Conexión exitosa con la base de datos")
+}
+
+func execCommand(command string) (string, error) {
+	cmd := exec.Command("sh", "-c", command)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", err
+	}
+
+	return string(out[:]), nil
+}
 
 func infoRamHandler(w http.ResponseWriter, r *http.Request) {
-	cmd := exec.Command("sh", "-c", "cat /proc/ram_so1_1s2024")
-	out, err := cmd.CombinedOutput()
+	output, err := execCommand("cat /proc/ram_so1_1s2024")
 	if err != nil {
 		http.Error(w, "Error al obtener la información del módulo RAM", http.StatusInternalServerError)
 		fmt.Println(err)
 		return
 	}
-
-	output := string(out[:])
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -26,25 +52,40 @@ func infoRamHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func infoCpuHandler(w http.ResponseWriter, r *http.Request) {
-	cmd := exec.Command("sh", "-c", "mpstat | awk 'NR==4 {print $NF}'")
-
-	out, err := cmd.CombinedOutput()
+	output, err := execCommand("mpstat | awk 'NR==4 {print $NF}'")
 	if err != nil {
 		http.Error(w, "Error al obtener la información de la CPU", http.StatusInternalServerError)
 		fmt.Println(err)
 		return
 	}
 
-	outputString := string(out[:])
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(outputString)
+	json.NewEncoder(w).Encode(output)
 }
 
 func main() {
-	http.HandleFunc("/api/ram", infoRamHandler)
-	http.HandleFunc("/api/cpu", infoCpuHandler)
+
+	dbConnection()
+
+	go func() {
+		ticket := time.NewTicker(5 * time.Second)
+		for {
+			select {
+			case <-ticket.C:
+				// _, err := db.Exec("INSERT INTO cpu (value) VALUES (?)", 10)
+				// if err != nil {
+				// 	fmt.Println("Error al insertar el valor de la CPU")
+				// }
+			}
+		}
+	}()
+
 	fmt.Println("Server is running on http://localhost:8080")
-	http.ListenAndServe(":8080", nil)
+
+	go func() {
+		http.HandleFunc("/api/ram", infoRamHandler)
+		http.HandleFunc("/api/cpu", infoCpuHandler)
+		http.ListenAndServe(":8080", nil)
+	}()
 }

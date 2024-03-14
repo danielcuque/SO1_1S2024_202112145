@@ -24,7 +24,7 @@ export default function Monitoreo() {
         // Establece un intervalo para llamar a getInfo cada 5 segundos
         const intervalId = setInterval(() => {
             setInfo();
-        }, 5000);
+        }, 500);
 
         // Limpia el intervalo al desmontar el componente
         return () => clearInterval(intervalId);
