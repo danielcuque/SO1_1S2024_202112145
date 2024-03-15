@@ -1,10 +1,35 @@
 "use client";
 
 import { LineChart } from "@/components/Graph/Graph";
+import { getInfo } from "@/utils/api";
+import { useEffect, useState } from "react";
+
+interface HistoricalData {
+    value: number;
+    date: string;
+}
 
 export default function Historico() {
 
-    const nowStr = new Date().toLocaleString();
+    const [historicalData, setHistoricalData] = useState<{
+        ram: HistoricalData[],
+        cpu: HistoricalData[],
+    }>({
+        ram: [],
+        cpu: [],
+    })
+    
+    useEffect(() => {
+        setInfo();
+    }, []);
+
+    const setInfo = async () => {
+        const response = await getInfo<{
+            ram: HistoricalData[],
+            cpu: HistoricalData[],
+        }>('/api/historical');
+        setHistoricalData(response);
+    }
 
     return (
         <div>
@@ -13,15 +38,11 @@ export default function Historico() {
                 <div>
                     <h2 className="text-xl text-center mt-4">Memoria RAM</h2>
                     {
-                        <LineChart data={[0, 100, 200, 120, 20, 10, 23]} labels={[
-                            nowStr,
-                            nowStr,
-                            nowStr,
-                            nowStr,
-                            nowStr,
-                            nowStr,
-                        ]} 
-                        
+                        <LineChart data={
+                            historicalData.ram.map((data) => data.value)
+                        } labels={
+                            historicalData.ram.map((data) => data.date)
+                        } 
                         dataSetLabel="Uso de RAM"
                         />
                     }
@@ -29,14 +50,11 @@ export default function Historico() {
                 <div>
                     <h2 className="text-xl text-center mt-4">CPU</h2>
                     {
-                        <LineChart data={[0, 100, 200, 120, 20, 10, 23]} labels={[
-                            nowStr,
-                            nowStr,
-                            nowStr,
-                            nowStr,
-                            nowStr,
-                            nowStr,
-                        ]} 
+                        <LineChart data={
+                            historicalData.cpu.map((data) => data.value)
+                        } labels={
+                            historicalData.cpu.map((data) => data.date)
+                        } 
                         
                         dataSetLabel="Uso de CPU"
                         />

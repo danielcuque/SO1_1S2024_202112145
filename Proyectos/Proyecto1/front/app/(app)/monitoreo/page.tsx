@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { MemoryChart } from "@/components/Graph/Graph";
+import { getInfo } from "@/utils/api";
 
 interface InfoRam {
     totalRam: number;
@@ -10,7 +11,6 @@ interface InfoRam {
     libre: number;
 }
 
-const mockInfoRam: InfoRam = { "totalRam": 4102373376, "memoriaEnUso": 3463741440, "porcentaje": 84, "libre": 638631936 }
 const conversionToGb = 1024 * 1024 * 1024;
 
 export default function Monitoreo() {
@@ -30,29 +30,7 @@ export default function Monitoreo() {
         return () => clearInterval(intervalId);
     }, []);
 
-    const getInfo = async <T= any>(url: string): Promise<T> => {
-        try {
-            const response = await fetch(
-                url,
-                {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                }
-            )
-            if (response.ok) {
-                const strResponse = await response.json();
-                console.log(strResponse)
-                return strResponse as T;
-            }
-
-            return mockInfoRam as T;
-        } catch (error) {
-            console.log(error)
-            return mockInfoRam as T;
-        }
-    }
+    
 
     const setInfo = async () => {
         const ramResponseStr = await getInfo<string>('/api/ram');
