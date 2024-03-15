@@ -18,8 +18,7 @@ type dbState struct {
 
 func dbConnection() {
 	var err error
-	// use container db_proyecto1
-	db, err = sql.Open("mysql", "root:root@tcp(db_proyecto1:3306)/proyecto1")
+	db, err = sql.Open("mysql", "root:root@tcp(db:3306)/proyecto1")
 	if err != nil {
 		fmt.Println("Error al conectar con la base de datos")
 		return
