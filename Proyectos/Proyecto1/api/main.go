@@ -17,17 +17,15 @@ type dbState struct {
 }
 
 func dbConnection() {
-	var err error
-	db, err = sql.Open("mysql", "root:root@tcp(db:3306)/proyecto1")
-	if err != nil {
-		fmt.Println("Error al conectar con la base de datos")
-		fmt.Println(err)
+	db, errDb := sql.Open("mysql", "root:root@tcp(db:3306)/proyecto1")
+	if errDb != nil {
+		fmt.Println("Error al conectar con la base de datos", errDb)
 		return
 	}
 
-	err = db.Ping()
+	err := db.Ping()
 	if err != nil {
-		fmt.Println("Error al conectar con la base de datos")
+		fmt.Println("Error al conectar con la base de datos", err)
 		fmt.Println(err)
 		return
 	}
