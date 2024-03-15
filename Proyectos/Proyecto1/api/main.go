@@ -13,7 +13,8 @@ var db *sql.DB
 
 func dbConnection() {
 	var err error
-	db, err = sql.Open("mysql", "root:root@tcp(localhost:3306)/monitoring")
+	// use container db_proyecto1
+	db, err = sql.Open("mysql", "root:root@tcp(db_proyecto1:3306)/proyecto1")
 	if err != nil {
 		fmt.Println("Error al conectar con la base de datos")
 		return
