@@ -11,6 +11,11 @@ import (
 
 var db *sql.DB
 
+type dbState struct {
+	value string
+	date  time.Time
+}
+
 func dbConnection() {
 	var err error
 	// use container db_proyecto1
@@ -63,11 +68,6 @@ func infoCpuHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(output)
-}
-
-type dbState struct {
-	value string
-	date  time.Time
 }
 
 func getHistoricalData(w http.ResponseWriter, r *http.Request) {

@@ -26,6 +26,9 @@ services:
       context: ./front
     ports:
       - "80:80"
+    container_name: web
+    environment:
+      - PROXY_IP='http://192.168.1.22'
 
 volumes:
   mysql_data:
