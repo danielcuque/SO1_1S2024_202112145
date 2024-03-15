@@ -21,12 +21,14 @@ func dbConnection() {
 	db, err = sql.Open("mysql", "root:root@tcp(db:3306)/proyecto1")
 	if err != nil {
 		fmt.Println("Error al conectar con la base de datos")
+		fmt.Println(err)
 		return
 	}
 
 	err = db.Ping()
 	if err != nil {
 		fmt.Println("Error al conectar con la base de datos")
+		fmt.Println(err)
 		return
 	}
 
