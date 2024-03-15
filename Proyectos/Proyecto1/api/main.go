@@ -16,29 +16,8 @@ type dbState struct {
 	date  time.Time
 }
 
-// Docker compose
-// db:
-// image: mysql:5.7
-// ports:
-//   - "3306:3306"
-// volumes:
-//   - mysql_data:/data/db
-// environment:
-//   MYSQL_ROOT_PASSWORD: root
-//   MYSQL_DATABASE: proyecto1
-// api:
-// build: ./api
-// volumes:
-//   - /proc:/proc
-// container_name: api
-// restart: always
-// ports:
-//   - "8080:8080"
-// depends_on:
-//   - db
-
 func dbConnection() {
-	db, errDb := sql.Open("mysql", "root:root@tcp(http://db:3306)/proyecto1")
+	db, errDb := sql.Open("mysql", "root:root@tcp(db:3306)/proyecto1")
 	if errDb != nil {
 		fmt.Println("Error al conectar con la base de datos", errDb)
 		return
