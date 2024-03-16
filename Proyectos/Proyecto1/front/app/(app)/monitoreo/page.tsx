@@ -28,7 +28,7 @@ export default function Monitoreo() {
         // Establece un intervalo para llamar a getInfo cada 5 segundos
         const intervalId = setInterval(() => {
             setInfo();
-        }, 500);
+        }, 5000);
 
         // Limpia el intervalo al desmontar el componente
         return () => clearInterval(intervalId);
@@ -47,6 +47,8 @@ export default function Monitoreo() {
 
         const memoriaEnUsoGb = memoriaEnUso / conversionToGb;
         const libreGb = libre / conversionToGb;
+
+        console.log(memoriaEnUsoGb, libreGb, usedCpu, freeCpu, 'AAAAAAAAAA');
         
         setInfoRam([memoriaEnUsoGb, libreGb]);
         setInfoCpu([usedCpu, freeCpu]);
