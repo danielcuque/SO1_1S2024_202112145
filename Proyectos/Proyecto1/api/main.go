@@ -18,21 +18,19 @@ type dbState struct {
 	date  time.Time
 }
 
-func dbConnection() {
-	db, errDb := sql.Open("mysql", "root:root@tcp(db:3306)/proyecto1")
-	if errDb != nil {
-		fmt.Println("Error al conectar con la base de datos", errDb)
-		return
+func dbConnection() error {
+	var err error
+	db, err = sql.Open("mysql", "root:root@tcp(db:3306)/proyecto1")
+	if err != nil {
+		return fmt.Errorf("error al conectar con la base de datos: %v", err)
 	}
 
-	err := db.Ping()
-	if err != nil {
-		fmt.Println("Error al conectar con la base de datos", err)
-		fmt.Println(err)
-		return
+	if err := db.Ping(); err != nil {
+		return fmt.Errorf("error al hacer ping a la base de datos: %v", err)
 	}
 
 	fmt.Println("Conexión exitosa con la base de datos")
+	return nil
 }
 
 func execCommand(command string) (string, error) {
@@ -115,41 +113,60 @@ func getHistoricalData(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{"cpu": cpuState, "ram": ramState})
 }
 
-func main() {
+func insertData() {
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
 
-	go func() {
-		dbConnection()
-		ticket := time.NewTicker(5 * time.Second)
-		for {
-			select {
-			case <-ticket.C:
-				ramInfo, err := execCommand("cat /proc/ram_so1_1s2024")
-				if err != nil {
-					fmt.Println(err)
-					continue
-				}
+	insertCPUStmt, err := db.Prepare("INSERT INTO cpu_state (value, date) VALUES (?, ?)")
+	if err != nil {
+		fmt.Println("Error al preparar la consulta para la CPU:", err)
+		return
+	}
+	defer insertCPUStmt.Close()
 
-				cpuInfo, err := execCommand("mpstat | awk 'NR==4 {print $NF}'")
+	insertRAMStmt, err := db.Prepare("INSERT INTO ram_state (value, date) VALUES (?, ?)")
+	if err != nil {
+		fmt.Println("Error al preparar la consulta para la RAM:", err)
+		return
+	}
+	defer insertRAMStmt.Close()
 
-				if err != nil {
-					fmt.Println(err)
-					continue
-				}
+	for {
+		select {
+		case <-ticker.C:
+			ramInfo, err := execCommand("cat /proc/ram_so1_1s2024")
+			if err != nil {
+				fmt.Println("Error al obtener información de RAM:", err)
+				continue
+			}
 
-				_, err = db.Exec("INSERT INTO cpu_state (value, date) VALUES (?, ?)", cpuInfo, time.Now())
-				if err != nil {
-					fmt.Println(err)
-					continue
-				}
+			cpuInfo, err := execCommand("mpstat | awk 'NR==4 {print $NF}'")
+			if err != nil {
+				fmt.Println("Error al obtener información de CPU:", err)
+				continue
+			}
 
-				_, err = db.Exec("INSERT INTO ram_state (value, date) VALUES (?, ?)", ramInfo, time.Now())
-				if err != nil {
-					fmt.Println(err)
-					continue
-				}
+			if _, err := insertCPUStmt.Exec(cpuInfo, time.Now()); err != nil {
+				fmt.Println("Error al insertar datos de CPU:", err)
+				continue
+			}
+
+			if _, err := insertRAMStmt.Exec(ramInfo, time.Now()); err != nil {
+				fmt.Println("Error al insertar datos de RAM:", err)
+				continue
 			}
 		}
-	}()
+	}
+}
+
+func main() {
+
+	if err := dbConnection(); err != nil {
+		fmt.Println("Error al conectar con la base de datos")
+		return
+	}
+
+	go insertData()
 
 	fmt.Println("Server is running on http://localhost:8080")
 
