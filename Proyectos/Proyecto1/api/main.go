@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os/exec"
+	"strconv"
 	"sync"
 	"time"
 
@@ -138,12 +139,17 @@ func insertDataPeriodically() {
 		cpuInfo, _ := execCommand("mpstat | awk 'NR==4 {print $NF}'")
 
 		// Insertar datos en la base de datos
-		_, err := db.Exec("INSERT INTO cpu_state (value, date) VALUES (?, ?)", cpuInfo, time.Now())
+
+		cpuInfoValue, _ := strconv.ParseFloat(cpuInfo, 64)
+
+		_, err := db.Exec("INSERT INTO cpu_state (value, date) VALUES (?, ?)", cpuInfoValue, time.Now())
 		if err != nil {
 			fmt.Println("Error al insertar datos en cpu_state:", err)
 		}
 
-		_, err = db.Exec("INSERT INTO ram_state (value, date) VALUES (?, ?)", ramInfo, time.Now())
+		ramInfoValue, _ := strconv.ParseFloat(ramInfo, 64)
+
+		_, err = db.Exec("INSERT INTO ram_state (value, date) VALUES (?, ?)", ramInfoValue, time.Now())
 		if err != nil {
 			fmt.Println("Error al insertar datos en ram_state:", err)
 		}
