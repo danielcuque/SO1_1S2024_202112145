@@ -105,44 +105,6 @@ func getTableData(tableName string) ([]dbState, error) {
 }
 
 func getHistoricalData(w http.ResponseWriter, r *http.Request) {
-	// cpuRows, err := db.Query("SELECT value, date FROM cpu_state")
-	// if err != nil {
-	// 	http.Error(w, "Error al obtener la información de la CPU", http.StatusInternalServerError)
-	// 	fmt.Println(err)
-	// 	return
-	// }
-
-	// var cpuState []dbState
-	// for cpuRows.Next() {
-	// 	var state dbState
-	// 	err = cpuRows.Scan(&state.value, &state.date)
-	// 	if err != nil {
-	// 		http.Error(w, "Error al obtener la información de la CPU", http.StatusInternalServerError)
-	// 		fmt.Println(err)
-	// 		return
-	// 	}
-	// 	cpuState = append(cpuState, state)
-	// }
-
-	// ramRows, err := db.Query("SELECT value, date FROM ram_state")
-	// if err != nil {
-	// 	http.Error(w, "Error al obtener la información de la RAM", http.StatusInternalServerError)
-	// 	fmt.Println(err)
-	// 	return
-	// }
-
-	// var ramState []dbState
-	// for ramRows.Next() {
-	// 	var state dbState
-	// 	err = ramRows.Scan(&state.value, &state.date)
-	// 	if err != nil {
-	// 		http.Error(w, "Error al obtener la información de la RAM", http.StatusInternalServerError)
-	// 		fmt.Println(err)
-	// 		return
-	// 	}
-	// 	ramState = append(ramState, state)
-	// }
-
 	cpuState, err := getTableData("cpu_state")
 	if err != nil {
 		http.Error(w, "Error al obtener la información de la CPU", http.StatusInternalServerError)
@@ -179,13 +141,18 @@ func inserData(value float64, tableName string) {
 
 func insertDataPeriodically() {
 	for {
-		// Ejecutar comandos para obtener información
-		// Ram info looks like "{"totalRam":4102373376, "memoriaEnUso":2279591936, "porcentaje":55, "libre":1822781440 }"
-		ramResponseStr, _ := execCommand("cat /proc/ram_so1_1s2024")
+		ramResponseStr, err := execCommand("cat /proc/ram_so1_1s2024")
+
+		if err != nil {
+			fmt.Println("Error al obtener la información de la RAM:", err)
+			continue
+		}
+
 		var ramResponse map[string]string
 		json.Unmarshal([]byte(ramResponseStr), &ramResponse)
 
 		ramUsed := ramResponse["memoriaEnUso"]
+
 		ramUsedValue, errRam := strconv.ParseFloat(ramUsed, 64)
 
 		if errRam != nil {
@@ -195,7 +162,13 @@ func insertDataPeriodically() {
 
 		inserData(ramUsedValue, "ram_state")
 
-		cpuInfo, _ := execCommand("mpstat | awk 'NR==4 {print $NF}'")
+		cpuInfo, errCpuCommand := execCommand("mpstat | awk 'NR==4 {print $NF}'")
+
+		if errCpuCommand != nil {
+			fmt.Println("Error al obtener la información de la CPU:", errCpuCommand)
+			continue
+		}
+
 		cpuInfoValue, errCpu := strconv.ParseFloat(cpuInfo, 64)
 
 		if errCpu != nil {
