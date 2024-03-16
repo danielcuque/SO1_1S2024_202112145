@@ -14,8 +14,8 @@ services:
     build: ./api
     volumes:
       - /proc:/proc
-    container_name: api
     restart: always
+    privileged: true
     ports:
       - "8080:8080"
     depends_on:
