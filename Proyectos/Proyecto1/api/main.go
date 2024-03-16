@@ -122,7 +122,7 @@ func getHistoricalData(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	go dbConnection() // Iniciar la conexión a la base de datos en una goroutine
+	// go dbConnection() // Iniciar la conexión a la base de datos en una goroutine
 
 	// Iniciar el servidor web
 	fmt.Println("Server is running on http://localhost:8080")
