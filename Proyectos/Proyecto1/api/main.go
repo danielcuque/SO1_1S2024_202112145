@@ -205,5 +205,6 @@ func main() {
 	setupRoutes()
 
 	// Iniciar el servidor web
+	fmt.Println("Servidor iniciado en http://localhost:8080")
 	http.ListenAndServe(":8080", nil)
 }
