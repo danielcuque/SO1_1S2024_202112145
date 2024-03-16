@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os/exec"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 var db *sql.DB
