@@ -12,7 +12,7 @@ interface InfoRam {
 }
 
 interface InfoCpu {
-    porcentaje: number;
+    cpu: number;
 }
 
 const conversionToGb = 1024 * 1024 * 1024;
@@ -40,7 +40,7 @@ export default function Monitoreo() {
         const ramResponse = await getInfo<InfoRam>('/api/ram');
         const cpuResponse = await getInfo<InfoCpu>('/api/cpu');
     
-        const { porcentaje: usedCpu } = cpuResponse;
+        const { cpu: usedCpu } = cpuResponse;
         const freeCpu = 100 - usedCpu;
 
         const { memoriaEnUso, libre } = ramResponse;

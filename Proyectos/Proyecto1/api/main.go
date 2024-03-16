@@ -65,16 +65,16 @@ func execCommand(command string) (string, error) {
 }
 
 func infoRamHandler(w http.ResponseWriter, r *http.Request) {
-	output, err := execCommand("cat /proc/ram_so1_1s2024")
+	ramInfo, err := getRamInfoAsJson()
 	if err != nil {
-		http.Error(w, "Error al obtener la información del módulo RAM", http.StatusInternalServerError)
+		http.Error(w, "Error al obtener la información de la RAM", http.StatusInternalServerError)
 		fmt.Println(err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(output)
+	json.NewEncoder(w).Encode(ramInfo)
 }
 
 func infoCpuHandler(w http.ResponseWriter, r *http.Request) {
@@ -150,20 +150,30 @@ func insertData(value float64, tableName string) {
 	}
 }
 
+func getRamInfoAsJson() (RamResponse, error) {
+	ramResponseStr, _ := execCommand("cat /proc/ram_so1_1s2024")
+	var ramResponse RamResponse
+
+	err := json.Unmarshal([]byte(ramResponseStr), &ramResponse)
+
+	if err != nil {
+		fmt.Println("Error al obtener la información de la RAM:", err)
+		return RamResponse{}, err
+	}
+
+	return ramResponse, nil
+}
+
 func insertDataPeriodically() {
 	for {
-		ramResponseStr, _ := execCommand("cat /proc/ram_so1_1s2024")
 
-		var ramResponse RamResponse
-
-		err := json.Unmarshal([]byte(ramResponseStr), &ramResponse)
-
+		ramInfo, err := getRamInfoAsJson()
 		if err != nil {
 			fmt.Println("Error al obtener la información de la RAM:", err)
 			continue
 		}
 
-		ramUsedValue := float64(ramResponse.Porcentaje)
+		ramUsedValue := float64(ramInfo.MemoriaEnUso)
 
 		insertData(ramUsedValue, "ram_state")
 
