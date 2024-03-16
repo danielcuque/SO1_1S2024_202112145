@@ -170,27 +170,30 @@ func setupRoutes() {
 	})
 }
 
+func inserData(value float64, tableName string) {
+	_, err := db.Exec("INSERT INTO "+tableName+" (value, date) VALUES (?, ?)", value, time.Now())
+	if err != nil {
+		fmt.Println("Error al insertar datos en "+tableName+":", err)
+	}
+}
+
 func insertDataPeriodically() {
 	for {
 		// Ejecutar comandos para obtener información
-		ramInfo, _ := execCommand("cat /proc/ram_so1_1s2024")
+		// Ram info looks like "{"totalRam":4102373376, "memoriaEnUso":2279591936, "porcentaje":55, "libre":1822781440 }"
+		ramResponseStr, _ := execCommand("cat /proc/ram_so1_1s2024")
+		var ramResponse map[string]string
+		json.Unmarshal([]byte(ramResponseStr), &ramResponse)
+
+		ramUsed := ramResponse["memoriaEnUso"]
+		ramUsedValue, _ := strconv.ParseFloat(ramUsed, 64)
+
+		inserData(ramUsedValue, "ram_state")
+
 		cpuInfo, _ := execCommand("mpstat | awk 'NR==4 {print $NF}'")
-
-		// Insertar datos en la base de datos
-
 		cpuInfoValue, _ := strconv.ParseFloat(cpuInfo, 64)
 
-		_, err := db.Exec("INSERT INTO cpu_state (value, date) VALUES (?, ?)", cpuInfoValue, time.Now())
-		if err != nil {
-			fmt.Println("Error al insertar datos en cpu_state:", err)
-		}
-
-		ramInfoValue, _ := strconv.ParseFloat(ramInfo, 64)
-
-		_, err = db.Exec("INSERT INTO ram_state (value, date) VALUES (?, ?)", ramInfoValue, time.Now())
-		if err != nil {
-			fmt.Println("Error al insertar datos en ram_state:", err)
-		}
+		inserData(cpuInfoValue, "cpu_state")
 
 		// Esperar 500 milisegundos antes de la próxima inserción
 		time.Sleep(500 * time.Millisecond)

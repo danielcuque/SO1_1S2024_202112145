@@ -3,11 +3,11 @@ USE proyecto1;
 CREATE TABLE IF NOT EXISTS cpu_state (
     id INT AUTO_INCREMENT PRIMARY KEY,
     value FLOAT NOT NULL,
-    date DATE
+    date DATETIME
 );
 
 CREATE TABLE IF NOT EXISTS ram_state (
     id INT AUTO_INCREMENT PRIMARY KEY,
     value FLOAT NOT NULL,
-    date DATE
+    date DATETIME
 );
