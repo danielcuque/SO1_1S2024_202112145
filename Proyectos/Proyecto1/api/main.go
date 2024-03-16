@@ -25,10 +25,10 @@ type dbState struct {
 }
 
 type RamResponse struct {
-	TotalRam     int64  `json:"totalRam"`
-	MemoriaEnUso string `json:"memoriaEnUso"`
-	Porcentaje   int    `json:"porcentaje"`
-	Libre        int64  `json:"libre"`
+	TotalRam     int64 `json:"totalRam"`
+	MemoriaEnUso int64 `json:"memoriaEnUso"`
+	Porcentaje   int   `json:"porcentaje"`
+	Libre        int64 `json:"libre"`
 }
 
 func dbConnection() {
