@@ -116,6 +116,7 @@ func getHistoricalData(w http.ResponseWriter, r *http.Request) {
 func main() {
 
 	go func() {
+		dbConnection()
 		ticket := time.NewTicker(5 * time.Second)
 		for {
 			select {
@@ -150,11 +151,8 @@ func main() {
 
 	fmt.Println("Server is running on http://localhost:8080")
 
-	go func() {
-		dbConnection()
-		http.HandleFunc("/api/ram", infoRamHandler)
-		http.HandleFunc("/api/cpu", infoCpuHandler)
-		http.HandleFunc("/api/historical", getHistoricalData)
-		http.ListenAndServe(":8080", nil)
-	}()
+	http.HandleFunc("/api/ram", infoRamHandler)
+	http.HandleFunc("/api/cpu", infoCpuHandler)
+	http.HandleFunc("/api/historical", getHistoricalData)
+	http.ListenAndServe(":8080", nil)
 }
