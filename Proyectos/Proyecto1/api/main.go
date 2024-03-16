@@ -160,8 +160,8 @@ func insertDataPeriodically() {
 }
 
 func main() {
-	go dbConnection() // Iniciar la conexión a la base de datos en una goroutine
-	// go insertDataPeriodically() // Iniciar la inserción de datos en una goroutine
+	go dbConnection()           // Iniciar la conexión a la base de datos en una goroutine
+	go insertDataPeriodically() // Iniciar la inserción de datos en una goroutine
 
 	// Configurar las rutas HTTP solo una vez
 	setupRoutes()
