@@ -11,6 +11,10 @@ interface InfoRam {
     libre: number;
 }
 
+interface InfoCpu {
+    porcentaje: number;
+}
+
 const conversionToGb = 1024 * 1024 * 1024;
 
 export default function Monitoreo() {

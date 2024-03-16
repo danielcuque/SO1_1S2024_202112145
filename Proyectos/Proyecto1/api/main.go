@@ -78,16 +78,13 @@ func infoRamHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func infoCpuHandler(w http.ResponseWriter, r *http.Request) {
-	output, err := execCommand("mpstat | awk 'NR==4 {print $NF}'")
-	if err != nil {
-		http.Error(w, "Error al obtener la información de la CPU", http.StatusInternalServerError)
-		fmt.Println(err)
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(output)
+	json.NewEncoder(w).Encode(
+		map[string]interface{}{
+			"cpu": getCpuInfoAsFloat(),
+		},
+	)
 }
 
 func getTableData(tableName string) ([]dbState, error) {
@@ -139,6 +136,13 @@ func setupRoutes() {
 	})
 }
 
+func getCpuInfoAsFloat() float64 {
+	cpuInfo, _ := execCommand("mpstat | awk 'NR==4 {print $NF}'")
+	cpuInfo = strings.ReplaceAll(cpuInfo, ",", ".")
+	cpuInfoValue, _ := strconv.ParseFloat(strings.TrimSpace(cpuInfo), 64)
+	return cpuInfoValue
+}
+
 func insertData(value float64, tableName string) {
 	_, err := db.Exec("INSERT INTO "+tableName+" (value, date) VALUES (?, ?)", value, time.Now())
 	if err != nil {
@@ -163,16 +167,7 @@ func insertDataPeriodically() {
 
 		insertData(ramUsedValue, "ram_state")
 
-		cpuInfo, _ := execCommand("mpstat | awk 'NR==4 {print $NF}'")
-
-		cpuInfo = strings.ReplaceAll(cpuInfo, ",", ".")
-
-		cpuInfoValue, errCpu := strconv.ParseFloat(strings.TrimSpace(cpuInfo), 64)
-
-		if errCpu != nil {
-			fmt.Println("Error al obtener la información de la CPU:", errCpu)
-			continue
-		}
+		cpuInfoValue := getCpuInfoAsFloat()
 
 		insertData(cpuInfoValue, "cpu_state")
 
