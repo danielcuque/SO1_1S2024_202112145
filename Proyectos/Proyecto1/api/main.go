@@ -92,17 +92,25 @@ func getTableData(tableName string) ([]dbState, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	var state []dbState
 	for rows.Next() {
 		var s dbState
-		var date []byte
-		err = rows.Scan(&s.value, &date)
+		var dateStr string
+		err = rows.Scan(&s.value, &dateStr)
 		if err != nil {
 			return nil, err
 		}
-		s.date, _ = time.Parse("2006-01-02 15:04:05", string(date))
+		s.date, err = time.Parse("2006-01-02 15:04:05", dateStr)
+		if err != nil {
+			return nil, err
+		}
 		state = append(state, s)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return state, nil
