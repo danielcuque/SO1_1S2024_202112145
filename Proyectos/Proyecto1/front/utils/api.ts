@@ -11,6 +11,7 @@ export const getInfo = async <T= any>(url: string): Promise<T> => {
         )
         if (response.ok) {
             const data = await response.json();
+            console.log(data);
             return data;
         }
 

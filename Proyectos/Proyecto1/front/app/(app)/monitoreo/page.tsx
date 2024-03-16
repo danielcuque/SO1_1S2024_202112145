@@ -38,11 +38,10 @@ export default function Monitoreo() {
 
     const setInfo = async () => {
         const ramResponse = await getInfo<InfoRam>('/api/ram');
-        const cpuResponse = await getInfo<string>('/api/cpu');
+        const cpuResponse = await getInfo<InfoCpu>('/api/cpu');
     
-        const freeCpuStr = cpuResponse.trim().replace(',', '.');
-        const freeCpu = parseFloat(freeCpuStr);
-        const usedCpu = 100 - freeCpu;
+        const { porcentaje: usedCpu } = cpuResponse;
+        const freeCpu = 100 - usedCpu;
 
         const { memoriaEnUso, libre } = ramResponse;
 
