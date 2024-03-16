@@ -33,8 +33,7 @@ export default function Monitoreo() {
     
 
     const setInfo = async () => {
-        const ramResponseStr = await getInfo<string>('/api/ram');
-        const ramResponse = JSON.parse(ramResponseStr) as InfoRam;
+        const ramResponse = await getInfo<InfoRam>('/api/ram');
         const cpuResponse = await getInfo<string>('/api/cpu');
     
         const freeCpuStr = cpuResponse.trim().replace(',', '.');

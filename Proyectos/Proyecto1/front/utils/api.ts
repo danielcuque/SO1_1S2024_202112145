@@ -10,9 +10,8 @@ export const getInfo = async <T= any>(url: string): Promise<T> => {
             }
         )
         if (response.ok) {
-            const strResponse = await response.json();
-            console.log(strResponse)
-            return strResponse as T;
+            const data = await response.json();
+            return data;
         }
 
     } catch (error) {
