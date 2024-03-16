@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { MemoryChart } from "@/components/Graph/Graph";
-import { getInfo } from "@/utils/api";
+import { convertToGb, getInfo } from "@/utils/utils";
 
 interface InfoRam {
     totalRam: number;
@@ -15,7 +15,6 @@ interface InfoCpu {
     cpu: number;
 }
 
-const conversionToGb = 1024 * 1024 * 1024;
 
 export default function Monitoreo() {
 
@@ -49,8 +48,8 @@ export default function Monitoreo() {
     
             const { memoriaEnUso, libre } = ramResponse;
     
-            const memoriaEnUsoGb = memoriaEnUso / conversionToGb;
-            const libreGb = libre / conversionToGb;
+            const memoriaEnUsoGb = convertToGb(memoriaEnUso);
+            const libreGb = convertToGb(libre);
     
             
             setInfoRam([memoriaEnUsoGb, libreGb]);

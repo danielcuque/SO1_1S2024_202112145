@@ -19,3 +19,5 @@ export const getInfo = async <T= any>(url: string): Promise<T> => {
         throw error;
     }
 }
+
+export const convertToGb = (value: number) => value / 1024 / 1024 / 1024;

@@ -1,7 +1,7 @@
 "use client";
 
 import { LineChart } from "@/components/Graph/Graph";
-import { getInfo } from "@/utils/api";
+import { convertToGb, getInfo } from "@/utils/utils";
 import { useEffect, useState } from "react";
 
 interface HistoricalData {
@@ -39,7 +39,7 @@ export default function Historico() {
                     <h2 className="text-xl text-center mt-4">Memoria RAM</h2>
                     {
                         <LineChart data={
-                            historicalData.ram.map((data) => data.value)
+                            historicalData.ram.map((data) => convertToGb(data.value))
                         } labels={
                             historicalData.ram.map((data) => data.date)
                         } 
