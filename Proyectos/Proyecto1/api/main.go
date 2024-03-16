@@ -81,7 +81,7 @@ func infoCpuHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getHistoricalData(w http.ResponseWriter, r *http.Request) {
-	cpuRows, err := db.Query("SELECT * FROM cpu_state")
+	cpuRows, err := db.Query("SELECT value, date FROM cpu_state")
 	if err != nil {
 		http.Error(w, "Error al obtener la información de la CPU", http.StatusInternalServerError)
 		fmt.Println(err)
@@ -100,7 +100,7 @@ func getHistoricalData(w http.ResponseWriter, r *http.Request) {
 		cpuState = append(cpuState, state)
 	}
 
-	ramRows, err := db.Query("SELECT * FROM ram_state")
+	ramRows, err := db.Query("SELECT value, date FROM ram_state")
 	if err != nil {
 		http.Error(w, "Error al obtener la información de la RAM", http.StatusInternalServerError)
 		fmt.Println(err)
