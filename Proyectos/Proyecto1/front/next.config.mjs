@@ -5,7 +5,7 @@ const nextConfig = {
         return [
             {
                 source: '/api/:path*',
-                destination: `${process.env.PROXY_IP || 'http://192.168.1.23'}/api/:path*`,
+                destination: `${process.env.PROXY_IP || 'http://192.168.1.23'}:8080/api/:path*`,
             },
         ];
     }

@@ -131,8 +131,31 @@ func setupRoutes() {
 	})
 }
 
+func insertDataPeriodically() {
+	for {
+		// Ejecutar comandos para obtener información
+		ramInfo, _ := execCommand("cat /proc/ram_so1_1s2024")
+		cpuInfo, _ := execCommand("mpstat | awk 'NR==4 {print $NF}'")
+
+		// Insertar datos en la base de datos
+		_, err := db.Exec("INSERT INTO cpu_state (value, date) VALUES (?, ?)", cpuInfo, time.Now())
+		if err != nil {
+			fmt.Println("Error al insertar datos en cpu_state:", err)
+		}
+
+		_, err = db.Exec("INSERT INTO ram_state (value, date) VALUES (?, ?)", ramInfo, time.Now())
+		if err != nil {
+			fmt.Println("Error al insertar datos en ram_state:", err)
+		}
+
+		// Esperar 500 milisegundos antes de la próxima inserción
+		time.Sleep(500 * time.Millisecond)
+	}
+}
+
 func main() {
-	go dbConnection() // Iniciar la conexión a la base de datos en una goroutine
+	go dbConnection()           // Iniciar la conexión a la base de datos en una goroutine
+	go insertDataPeriodically() // Iniciar la inserción de datos en una goroutine
 
 	// Configurar las rutas HTTP solo una vez
 	setupRoutes()
