@@ -6,12 +6,17 @@ import (
 	"fmt"
 	"net/http"
 	"os/exec"
+	"sync"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
-var db *sql.DB
+var (
+	db      *sql.DB
+	initDB  sync.Once
+	initAPI sync.Once
+)
 
 type dbState struct {
 	value string
@@ -19,20 +24,23 @@ type dbState struct {
 }
 
 func dbConnection() {
-	db, errDb := sql.Open("mysql", "root:root@tcp(db:3306)/proyecto1")
-	if errDb != nil {
-		fmt.Println("Error al conectar con la base de datos", errDb)
-		return
-	}
+	var errDb error
+	initDB.Do(func() {
+		db, errDb = sql.Open("mysql", "root:root@tcp(db:3306)/proyecto1")
+		if errDb != nil {
+			fmt.Println("Error al conectar con la base de datos", errDb)
+			return
+		}
 
-	err := db.Ping()
-	if err != nil {
-		fmt.Println("Error al conectar con la base de datos", err)
-		fmt.Println(err)
-		return
-	}
+		err := db.Ping()
+		if err != nil {
+			fmt.Println("Error al conectar con la base de datos", err)
+			fmt.Println(err)
+			return
+		}
 
-	fmt.Println("Conexión exitosa con la base de datos")
+		fmt.Println("Conexión exitosa con la base de datos")
+	})
 }
 
 func execCommand(command string) (string, error) {
@@ -46,88 +54,89 @@ func execCommand(command string) (string, error) {
 }
 
 func infoRamHandler(w http.ResponseWriter, r *http.Request) {
-	go func() {
-		output, err := execCommand("cat /proc/ram_so1_1s2024")
-		if err != nil {
-			http.Error(w, "Error al obtener la información del módulo RAM", http.StatusInternalServerError)
-			fmt.Println(err)
-			return
-		}
+	output, err := execCommand("cat /proc/ram_so1_1s2024")
+	if err != nil {
+		http.Error(w, "Error al obtener la información del módulo RAM", http.StatusInternalServerError)
+		fmt.Println(err)
+		return
+	}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(output)
-	}()
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(output)
 }
 
 func infoCpuHandler(w http.ResponseWriter, r *http.Request) {
-	go func() {
-		output, err := execCommand("mpstat | awk 'NR==4 {print $NF}'")
-		if err != nil {
-			http.Error(w, "Error al obtener la información de la CPU", http.StatusInternalServerError)
-			fmt.Println(err)
-			return
-		}
+	output, err := execCommand("mpstat | awk 'NR==4 {print $NF}'")
+	if err != nil {
+		http.Error(w, "Error al obtener la información de la CPU", http.StatusInternalServerError)
+		fmt.Println(err)
+		return
+	}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(output)
-	}()
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(output)
 }
 
 func getHistoricalData(w http.ResponseWriter, r *http.Request) {
-	go func() {
-		cpuRows, err := db.Query("SELECT * FROM cpu_state")
+	cpuRows, err := db.Query("SELECT * FROM cpu_state")
+	if err != nil {
+		http.Error(w, "Error al obtener la información de la CPU", http.StatusInternalServerError)
+		fmt.Println(err)
+		return
+	}
+
+	var cpuState []dbState
+	for cpuRows.Next() {
+		var state dbState
+		err = cpuRows.Scan(&state.value, &state.date)
 		if err != nil {
 			http.Error(w, "Error al obtener la información de la CPU", http.StatusInternalServerError)
 			fmt.Println(err)
 			return
 		}
+		cpuState = append(cpuState, state)
+	}
 
-		var cpuState []dbState
-		for cpuRows.Next() {
-			var state dbState
-			err = cpuRows.Scan(&state.value, &state.date)
-			if err != nil {
-				http.Error(w, "Error al obtener la información de la CPU", http.StatusInternalServerError)
-				fmt.Println(err)
-				return
-			}
-			cpuState = append(cpuState, state)
-		}
+	ramRows, err := db.Query("SELECT * FROM ram_state")
+	if err != nil {
+		http.Error(w, "Error al obtener la información de la RAM", http.StatusInternalServerError)
+		fmt.Println(err)
+		return
+	}
 
-		ramRows, err := db.Query("SELECT * FROM ram_state")
+	var ramState []dbState
+	for ramRows.Next() {
+		var state dbState
+		err = ramRows.Scan(&state.value, &state.date)
 		if err != nil {
 			http.Error(w, "Error al obtener la información de la RAM", http.StatusInternalServerError)
 			fmt.Println(err)
 			return
 		}
+		ramState = append(ramState, state)
+	}
 
-		var ramState []dbState
-		for ramRows.Next() {
-			var state dbState
-			err = ramRows.Scan(&state.value, &state.date)
-			if err != nil {
-				http.Error(w, "Error al obtener la información de la RAM", http.StatusInternalServerError)
-				fmt.Println(err)
-				return
-			}
-			ramState = append(ramState, state)
-		}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{"cpu": cpuState, "ram": ramState})
+}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"cpu": cpuState, "ram": ramState})
-	}()
+func setupRoutes() {
+	initAPI.Do(func() {
+		http.HandleFunc("/api/ram", infoRamHandler)
+		http.HandleFunc("/api/cpu", infoCpuHandler)
+		http.HandleFunc("/api/historical", getHistoricalData)
+	})
 }
 
 func main() {
-	// go dbConnection() // Iniciar la conexión a la base de datos en una goroutine
+	go dbConnection() // Iniciar la conexión a la base de datos en una goroutine
+
+	// Configurar las rutas HTTP solo una vez
+	setupRoutes()
 
 	// Iniciar el servidor web
-	fmt.Println("Server is running on http://localhost:8080")
-	http.HandleFunc("/api/ram", infoRamHandler)
-	http.HandleFunc("/api/cpu", infoCpuHandler)
-	http.HandleFunc("/api/historical", getHistoricalData)
 	http.ListenAndServe(":8080", nil)
 }
