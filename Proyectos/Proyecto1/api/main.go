@@ -27,7 +27,9 @@ type dbState struct {
 func dbConnection() {
 	var errDb error
 	initDB.Do(func() {
-		db, errDb = sql.Open("mysql", "root:root@tcp(db:3306)/proyecto1")
+		// for develop use just docker container db
+		// db, errDb = sql.Open("mysql", "root:root@tcp(db:3306)/proyecto1")
+		db, errDb = sql.Open("mysql", "root:root@tcp(localhost:3306)/proyecto1")
 		if errDb != nil {
 			fmt.Println("Error al conectar con la base de datos", errDb)
 			return
@@ -80,43 +82,79 @@ func infoCpuHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(output)
 }
 
+func getTableData(tableName string) ([]dbState, error) {
+	rows, err := db.Query("SELECT value, date FROM " + tableName)
+	if err != nil {
+		return nil, err
+	}
+
+	var state []dbState
+	for rows.Next() {
+		var s dbState
+		var date []byte
+		err = rows.Scan(&s.value, &date)
+		if err != nil {
+			return nil, err
+		}
+		s.date, _ = time.Parse("2006-01-02 15:04:05", string(date))
+		state = append(state, s)
+	}
+
+	return state, nil
+
+}
+
 func getHistoricalData(w http.ResponseWriter, r *http.Request) {
-	cpuRows, err := db.Query("SELECT value, date FROM cpu_state")
+	// cpuRows, err := db.Query("SELECT value, date FROM cpu_state")
+	// if err != nil {
+	// 	http.Error(w, "Error al obtener la información de la CPU", http.StatusInternalServerError)
+	// 	fmt.Println(err)
+	// 	return
+	// }
+
+	// var cpuState []dbState
+	// for cpuRows.Next() {
+	// 	var state dbState
+	// 	err = cpuRows.Scan(&state.value, &state.date)
+	// 	if err != nil {
+	// 		http.Error(w, "Error al obtener la información de la CPU", http.StatusInternalServerError)
+	// 		fmt.Println(err)
+	// 		return
+	// 	}
+	// 	cpuState = append(cpuState, state)
+	// }
+
+	// ramRows, err := db.Query("SELECT value, date FROM ram_state")
+	// if err != nil {
+	// 	http.Error(w, "Error al obtener la información de la RAM", http.StatusInternalServerError)
+	// 	fmt.Println(err)
+	// 	return
+	// }
+
+	// var ramState []dbState
+	// for ramRows.Next() {
+	// 	var state dbState
+	// 	err = ramRows.Scan(&state.value, &state.date)
+	// 	if err != nil {
+	// 		http.Error(w, "Error al obtener la información de la RAM", http.StatusInternalServerError)
+	// 		fmt.Println(err)
+	// 		return
+	// 	}
+	// 	ramState = append(ramState, state)
+	// }
+
+	cpuState, err := getTableData("cpu_state")
 	if err != nil {
 		http.Error(w, "Error al obtener la información de la CPU", http.StatusInternalServerError)
 		fmt.Println(err)
 		return
 	}
 
-	var cpuState []dbState
-	for cpuRows.Next() {
-		var state dbState
-		err = cpuRows.Scan(&state.value, &state.date)
-		if err != nil {
-			http.Error(w, "Error al obtener la información de la CPU", http.StatusInternalServerError)
-			fmt.Println(err)
-			return
-		}
-		cpuState = append(cpuState, state)
-	}
-
-	ramRows, err := db.Query("SELECT value, date FROM ram_state")
+	ramState, err := getTableData("ram_state")
 	if err != nil {
 		http.Error(w, "Error al obtener la información de la RAM", http.StatusInternalServerError)
 		fmt.Println(err)
 		return
-	}
-
-	var ramState []dbState
-	for ramRows.Next() {
-		var state dbState
-		err = ramRows.Scan(&state.value, &state.date)
-		if err != nil {
-			http.Error(w, "Error al obtener la información de la RAM", http.StatusInternalServerError)
-			fmt.Println(err)
-			return
-		}
-		ramState = append(ramState, state)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
