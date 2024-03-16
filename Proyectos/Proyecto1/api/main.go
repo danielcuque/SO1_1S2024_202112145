@@ -186,12 +186,22 @@ func insertDataPeriodically() {
 		json.Unmarshal([]byte(ramResponseStr), &ramResponse)
 
 		ramUsed := ramResponse["memoriaEnUso"]
-		ramUsedValue, _ := strconv.ParseFloat(ramUsed, 64)
+		ramUsedValue, errRam := strconv.ParseFloat(ramUsed, 64)
+
+		if errRam != nil {
+			fmt.Println("Error al obtener la información de la RAM:", errRam)
+			continue
+		}
 
 		inserData(ramUsedValue, "ram_state")
 
 		cpuInfo, _ := execCommand("mpstat | awk 'NR==4 {print $NF}'")
-		cpuInfoValue, _ := strconv.ParseFloat(cpuInfo, 64)
+		cpuInfoValue, errCpu := strconv.ParseFloat(cpuInfo, 64)
+
+		if errCpu != nil {
+			fmt.Println("Error al obtener la información de la CPU:", errCpu)
+			continue
+		}
 
 		inserData(cpuInfoValue, "cpu_state")
 
