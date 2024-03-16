@@ -10,5 +10,5 @@ cd ..
 
 cd cpu/
 make all
-sudo insmod cpu_so1_1s2024
+sudo insmod cpu_so1_1s2024.ko
 make clean
