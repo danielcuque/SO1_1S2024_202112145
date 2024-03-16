@@ -88,7 +88,7 @@ func infoCpuHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getTableData(tableName string) ([]DbState, error) {
-	rows, err := db.Query("SELECT value, date FROM " + tableName)
+	rows, err := db.Query("SELECT value, date FROM " + tableName + " ORDER BY date DESC LIMIT 100")
 	if err != nil {
 		return nil, err
 	}
