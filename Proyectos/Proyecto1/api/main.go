@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os/exec"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -164,7 +165,9 @@ func insertDataPeriodically() {
 
 		cpuInfo, _ := execCommand("mpstat | awk 'NR==4 {print $NF}'")
 
-		cpuInfoValue, errCpu := strconv.ParseFloat(cpuInfo, 64)
+		cpuInfo = strings.ReplaceAll(cpuInfo, ",", ".")
+
+		cpuInfoValue, errCpu := strconv.ParseFloat(strings.TrimSpace(cpuInfo), 64)
 
 		if errCpu != nil {
 			fmt.Println("Error al obtener la información de la CPU:", errCpu)
