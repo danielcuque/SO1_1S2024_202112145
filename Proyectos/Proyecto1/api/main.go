@@ -20,9 +20,9 @@ var (
 	initAPI sync.Once
 )
 
-type dbState struct {
-	value string
-	date  time.Time
+type DbState struct {
+	Value float64   `json:"value"`
+	Date  time.Time `json:"date"`
 }
 
 type RamResponse struct {
@@ -87,25 +87,25 @@ func infoCpuHandler(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
-func getTableData(tableName string) ([]dbState, error) {
+func getTableData(tableName string) ([]DbState, error) {
 	rows, err := db.Query("SELECT value, date FROM " + tableName)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var state []dbState
+	var state []DbState
 	for rows.Next() {
-		var s dbState
-		var dateStr string
-		err = rows.Scan(&s.value, &dateStr)
-		if err != nil {
+		var s DbState
+		var dateDb []uint8
+
+		if err := rows.Scan(&s.Value, &dateDb); err != nil {
 			return nil, err
 		}
-		s.date, err = time.Parse("2006-01-02 15:04:05", dateStr)
-		if err != nil {
-			return nil, err
-		}
+
+		date, _ := time.Parse("2006-01-02 15:04:05", string(dateDb))
+
+		s.Date = date
 		state = append(state, s)
 	}
 
