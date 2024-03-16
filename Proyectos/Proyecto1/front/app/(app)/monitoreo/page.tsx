@@ -37,23 +37,28 @@ export default function Monitoreo() {
     
 
     const setInfo = async () => {
-        const ramResponse = await getInfo<InfoRam>('/api/ram');
-        const cpuResponse = await getInfo<InfoCpu>('/api/cpu');
-    
-        const { cpu: usedCpu } = cpuResponse;
-        const freeCpu = 100 - usedCpu;
+        try {
+            const ramResponse = await getInfo<InfoRam>('/api/ram');
+            const cpuResponse = await getInfo<InfoCpu>('/api/cpu');
 
-        const { memoriaEnUso, libre } = ramResponse;
+            console.log(ramResponse, cpuResponse, 'AAAAAAAAAA');
 
-        const memoriaEnUsoGb = memoriaEnUso / conversionToGb;
-        const libreGb = libre / conversionToGb;
-
-        console.log(memoriaEnUsoGb, libreGb, usedCpu, freeCpu, 'AAAAAAAAAA');
         
-        setInfoRam([memoriaEnUsoGb, libreGb]);
-        setInfoCpu([usedCpu, freeCpu]);
+            const usedCpu = cpuResponse.cpu;
+            const freeCpu = 100 - usedCpu;
+    
+            const { memoriaEnUso, libre } = ramResponse;
+    
+            const memoriaEnUsoGb = memoriaEnUso / conversionToGb;
+            const libreGb = libre / conversionToGb;
+    
+            
+            setInfoRam([memoriaEnUsoGb, libreGb]);
+            setInfoCpu([usedCpu, freeCpu]);
+        } catch (error) {
+            console.error('Error al obtener información:', error);
+        }
     }
-
 
     return (
         <div className="mt-10 mx-8">
