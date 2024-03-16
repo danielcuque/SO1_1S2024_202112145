@@ -24,6 +24,13 @@ type dbState struct {
 	date  time.Time
 }
 
+type RamResponse struct {
+	TotalRam     int64  `json:"totalRam"`
+	MemoriaEnUso string `json:"memoriaEnUso"`
+	Porcentaje   int    `json:"porcentaje"`
+	Libre        int64  `json:"libre"`
+}
+
 func dbConnection() {
 	var errDb error
 	initDB.Do(func() {
@@ -101,7 +108,6 @@ func getTableData(tableName string) ([]dbState, error) {
 	}
 
 	return state, nil
-
 }
 
 func getHistoricalData(w http.ResponseWriter, r *http.Request) {
@@ -132,7 +138,7 @@ func setupRoutes() {
 	})
 }
 
-func inserData(value float64, tableName string) {
+func insertData(value float64, tableName string) {
 	_, err := db.Exec("INSERT INTO "+tableName+" (value, date) VALUES (?, ?)", value, time.Now())
 	if err != nil {
 		fmt.Println("Error al insertar datos en "+tableName+":", err)
@@ -141,33 +147,22 @@ func inserData(value float64, tableName string) {
 
 func insertDataPeriodically() {
 	for {
-		ramResponseStr, err := execCommand("cat /proc/ram_so1_1s2024")
+		ramResponseStr, _ := execCommand("cat /proc/ram_so1_1s2024")
+
+		var ramResponse RamResponse
+
+		err := json.Unmarshal([]byte(ramResponseStr), &ramResponse)
 
 		if err != nil {
 			fmt.Println("Error al obtener la información de la RAM:", err)
 			continue
 		}
 
-		var ramResponse map[string]string
-		json.Unmarshal([]byte(ramResponseStr), &ramResponse)
+		ramUsedValue := float64(ramResponse.Porcentaje)
 
-		ramUsed := ramResponse["memoriaEnUso"]
+		insertData(ramUsedValue, "ram_state")
 
-		ramUsedValue, errRam := strconv.ParseFloat(ramUsed, 64)
-
-		if errRam != nil {
-			fmt.Println("Error al obtener la información de la RAM:", errRam)
-			continue
-		}
-
-		inserData(ramUsedValue, "ram_state")
-
-		cpuInfo, errCpuCommand := execCommand("mpstat | awk 'NR==4 {print $NF}'")
-
-		if errCpuCommand != nil {
-			fmt.Println("Error al obtener la información de la CPU:", errCpuCommand)
-			continue
-		}
+		cpuInfo, _ := execCommand("mpstat | awk 'NR==4 {print $NF}'")
 
 		cpuInfoValue, errCpu := strconv.ParseFloat(cpuInfo, 64)
 
@@ -176,7 +171,7 @@ func insertDataPeriodically() {
 			continue
 		}
 
-		inserData(cpuInfoValue, "cpu_state")
+		insertData(cpuInfoValue, "cpu_state")
 
 		// Esperar 500 milisegundos antes de la próxima inserción
 		time.Sleep(500 * time.Millisecond)
