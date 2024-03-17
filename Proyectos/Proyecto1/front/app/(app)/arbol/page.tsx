@@ -39,7 +39,7 @@ export default function Arbol() {
             <h1 className="text-3xl font-semibold text-center">Árbol de procesos</h1>
             <Listbox value={currentProcess} onChange={setCurrentProcess}>
                 <Listbox.Button>
-                    {currentProcess ? currentProcess.Name : 'Selecciona un proceso'}
+                    {currentProcess ? currentProcess.name : 'Selecciona un proceso'}
                 </Listbox.Button>
                 <Transition
                     as={Fragment}
@@ -49,8 +49,8 @@ export default function Arbol() {
                 >
                     <Listbox.Options>
                         {processes.map(process => (
-                            <Listbox.Option key={process.PID} value={process}>
-                                {process.Name}
+                            <Listbox.Option key={process.pid} value={process}>
+                                {process.name}
                             </Listbox.Option>
                         ))}
                     </Listbox.Options>

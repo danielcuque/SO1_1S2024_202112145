@@ -1,15 +1,22 @@
-export type Process = {
-    ProcessId: number;
-    PID: number;
-    Name: string;
-    State: number;
-    RSS: number;
-    UID: number;
-    Children: Process[];
+export interface ProcessChild {
+    pid: number;
+    name: string;
+    state: number;
+    pidPadre: number;
+    child: ProcessChild[];
 }
 
-export type CpuResponse = {
-    cpuUsed: number;
+export interface Process {
+    pid: number;
+    name: string;
+    state: number;
+    child: ProcessChild[];
+}
+
+export interface CpuResponse {
+    percentage: number;
+    total_usage: number;
+    total_time_cpu: number;
     processes: Process[];
 }
 
@@ -40,19 +47,25 @@ export const convertToGb = (value: number) => value / 1024 / 1024 / 1024;
 
 export const buildDot = (process: Process): string =>{
     let dot = '';
-    
-    // Agregar el nodo actual al texto DOT
-    dot += `  ${process.PID} [label="${process.Name}"];\n`;
+    // Construir el nodo para el proceso
+    dot += `${process.pid} [label="${process.name}"];\n`;
+    // Construir los nodos para los procesos hijos
+    process.child.forEach(child => {
+        dot += buildDotChild(process.pid, child);
+    });
+    return dot;
+}
 
-    // Si el proceso tiene hijos, agregar las relaciones entre nodos
-    if (process.Children && process.Children.length > 0) {
-        process.Children.forEach(child => {
-            dot += `  ${process.PID} -> ${child.PID};\n`;
-            // Llamar recursivamente a la función para el hijo actual
-            dot += buildDot(child);
-        });
-    }
-
+export const buildDotChild = (pid: number, child: ProcessChild): string => {
+    let dot = '';
+    // Construir el nodo para el proceso hijo
+    dot += `${child.pid} [label="${child.name}"];\n`;
+    // Construir la relación entre el proceso padre y el hijo
+    dot += `${pid} -> ${child.pid};\n`;
+    // Construir los nodos para los procesos hijos del proceso hijo
+    child.child.forEach(child => {
+        dot += buildDotChild(child.pid, child);
+    });
     return dot;
 }
 
