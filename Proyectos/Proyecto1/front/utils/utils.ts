@@ -60,7 +60,7 @@ export const buildDotChild = (pid: number, child: ProcessChild): string => {
     // Construir el nodo para el proceso hijo
     dot += `${child.pid} [label="${child.name}"];\n`;
     // Construir la relación entre el proceso padre y el hijo
-    dot += `${pid} -> ${child.pid};\n`;
+    dot += `${child.pidPadre} -> ${child.pid};\n`;
     // Construir los nodos para los procesos hijos del proceso hijo
     child.child.forEach(child => {
         dot += buildDotChild(child.pid, child);
@@ -79,13 +79,9 @@ export const buildDotFromProcess = (process: Process): string => {
 
 export const buildDotFromTree = (processes: Process[]): string => {
     let dot = 'digraph G {\n';
-
-    // Añadir un nodo raíz
-    dot += 'root [label="Root"];\n';
     
     processes.forEach(process => {
         dot += buildDot(process);
-        dot += `root -> ${process.pid};\n`;
     });
 
     dot += '}';
