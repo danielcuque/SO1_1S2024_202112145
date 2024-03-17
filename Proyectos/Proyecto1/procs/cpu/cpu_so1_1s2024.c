@@ -21,7 +21,7 @@ MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Módulo CPU - Laboratorio Sistemas Operativos 1");
 MODULE_AUTHOR("Daniel Estuardo Cuque Ruíz");
 
-static void imprimir_hijos(struct seq_file *archivo, struct list_head *hijos);
+static void imprimir_hijos(struct seq_file *archivo, struct task_struct *parent);
 
 
 static int mostrar_informacion_cpu(struct seq_file *archivo, void *v) {
