@@ -93,12 +93,12 @@ static int mostrar_informacion_cpu(struct seq_file *archivo, void *v) {
     return 0;
 }
 
-static void imprimir_hijos(struct seq_file *archivo, struct list_head *hijos) {
+static void imprimir_hijos(struct seq_file *archivo, struct task_struct *parent) {
     struct list_head *lstProcess;
     struct task_struct *child;
     int first_child = 1;
 
-    list_for_each(lstProcess, hijos) {
+    list_for_each(lstProcess, &parent->children) {
         if (!first_child) {
             seq_printf(archivo, ",\n");
         }
@@ -120,6 +120,15 @@ static void imprimir_hijos(struct seq_file *archivo, struct list_head *hijos) {
         }
 
         seq_printf(archivo, "          \"childrenUID\": %u\n", from_kuid(&init_user_ns, child->cred->user->uid));
+
+        // Si el proceso tiene hijos, imprimir recursivamente los hijos de ese proceso
+        if (!list_empty(&child->children)) {
+            seq_printf(archivo, ",\n");
+            seq_printf(archivo, "          \"children\": [\n");
+            imprimir_hijos(archivo, child);
+            seq_printf(archivo, "          ]\n");
+        }
+
         seq_printf(archivo, "        }");
     }
 }
