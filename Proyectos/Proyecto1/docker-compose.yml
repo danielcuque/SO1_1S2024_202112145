@@ -1,11 +1,22 @@
 version: '3.1'
 
 services:
+  nginx:
+    build: 
+      context: ./nginx
+    image: danielcuque/so1_202112145_p1_nginx
+    ports:
+      - "80:80"
+    restart: always
+    depends_on:
+      - api
+      - web
   db:
     build: 
       context: ./db
     ports:
       - "3306:3306"
+    image: danielcuque/so1_202112145_p1_db
     volumes:
       - mysql_data:/var/lib/mysql
     environment:
@@ -15,6 +26,7 @@ services:
     build: ./api
     volumes:
       - /proc:/proc
+    image: danielcuque/so1_202112145_p1_api
     restart: always
     privileged: true
     ports:
@@ -25,10 +37,9 @@ services:
     build:
       context: ./front
     ports:
-      - "80:80"
+      - "3000:3000"
     container_name: web
-    environment:
-      - PROXY_IP='http://192.168.1.23'
+    image: danielcuque/so1_202112145_p1_web
 
 volumes:
   mysql_data:
