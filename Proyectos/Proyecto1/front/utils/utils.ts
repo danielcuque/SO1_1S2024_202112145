@@ -31,7 +31,6 @@ export const getInfo = async <T= any>(url: string): Promise<T> => {
 
         if (response.ok) {
             const data = await response.json();
-            console.log(data);
             return data;
         } else {
             throw new Error('La solicitud no fue exitosa');
@@ -71,8 +70,7 @@ export const buildDotChild = (pid: number, child: ProcessChild): string => {
 
 export const buildDotFromProcess = (process: Process): string => {
     let dot = 'digraph G {\n';
-    // Construir el nodo raíz
-    dot += 'root [label="root"];\n';
+
     // Construir el DOT a partir del proceso específico
     dot += buildDot(process);
     dot += '}';
@@ -82,16 +80,15 @@ export const buildDotFromProcess = (process: Process): string => {
 export const buildDotFromTree = (processes: Process[]): string => {
     let dot = 'digraph G {\n';
 
-    // add root node
-    dot += 'root [label="root"];\n';
+    // Añadir un nodo raíz
+    dot += 'root [label="Root"];\n';
     
     processes.forEach(process => {
         dot += buildDot(process);
+        dot += `root -> ${process.pid};\n`;
     });
 
     dot += '}';
-
-    console.log(dot)
 
     return dot;
 }

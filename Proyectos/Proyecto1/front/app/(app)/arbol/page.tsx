@@ -67,7 +67,10 @@ export default function Arbol() {
                 >
                     <Listbox.Options className="absolute z-10 w-1/2 py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
                         {processes.map(process => (
-                            <Listbox.Option key={process.pid} value={process}>
+                            <Listbox.Option key={process.pid} value={process} className={({ active }) =>
+                                `relative cursor-default select-none py-2 pl-10 pr-4 ${active ? 'bg-amber-100 text-amber-900' : 'text-gray-900'
+                                }`
+                            }>
                                 {({ selected }) => (
                                     <>
                                         <span
