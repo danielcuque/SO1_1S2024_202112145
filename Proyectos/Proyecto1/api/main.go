@@ -33,18 +33,20 @@ type RamResponse struct {
 }
 
 type Process struct {
+	PID       int       `json:"pid"`
+	Name      string    `json:"name"`
+	State     int       `json:"state"`
+	Children  []Process `json:"child"`
 	ProcessId int       `json:"processId"`
-	PID       int       `json:"PID"`
-	Name      string    `json:"Name"`
-	State     int       `json:"State"`
 	RSS       int       `json:"RSS"`
 	UID       int       `json:"UID"`
-	Children  []Process `json:"children"`
 }
 
 type CpuResponse struct {
-	CpuUsed   float64   `json:"cpuUsed"`
-	Processes []Process `json:"processes"`
+	Percentage   float64   `json:"percentage"`
+	TotalUsage   float64   `json:"total_usage"`
+	TotalTimeCpu float64   `json:"total_time_cpu"`
+	Processes    []Process `json:"processes"`
 }
 
 func dbConnection() {

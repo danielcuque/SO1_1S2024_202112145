@@ -11,140 +11,137 @@
 #include <linux/sched/cputime.h>
 #include <linux/timekeeping.h>
 #include <linux/time.h>
-#include<linux/slab.h>
 
 MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("Módulo CPU - Laboratorio Sistemas Operativos 1");
 MODULE_AUTHOR("Daniel Estuardo Cuque Ruíz");
+MODULE_DESCRIPTION("Informacion cpu");
+MODULE_VERSION("1.0");
 
-struct process_info {
-    int pid;
-    char name[TASK_COMM_LEN];
+struct task_struct *task;       
+struct task_struct *task_child; 
+struct list_head *list;         
+struct task_struct *cpu;       
+uint64_t total_time_cpu;
+uint64_t total_usage;
+unsigned long usage_percentage;
+
+static void traverse_children(struct seq_file *file_proc, struct list_head *children);
+static int escribir_a_proc(struct seq_file *file_proc, void *v)
+{
+    int running = 0;
+    int sleeping = 0;
+    int zombie = 0;
+    int stopped = 0;
     unsigned long rss;
-    int uid;
-    struct list_head children;
-};
+    unsigned long total_ram_pages;
 
-static struct process_info root;
+    total_ram_pages = totalram_pages();
+    if (!total_ram_pages)
+    {
+        pr_err("No memory available\n");
+        return -EINVAL;
+    }
 
-static void agregar_hijos(struct task_struct *parent, struct process_info *node) {
+#ifndef CONFIG_MMU
+    pr_err("No MMU, cannot calculate RSS.\n");
+    return -EINVAL;
+#endif
+
+
+    total_time_cpu = 0;
+    total_usage = 0;   
+    usage_percentage=0;
+
+    for_each_process(cpu) {
+        uint64_t cpu_time_ns;
+        cpu_time_ns = cpu->utime + cpu->stime;
+        total_usage += cpu_time_ns;
+    }
+
+    total_time_cpu = ktime_to_ns(ktime_get());
+
+    if (total_time_cpu > 0) { usage_percentage = (total_usage * 100) / total_time_cpu; }
+    else { usage_percentage = 0; }
+
+    seq_printf(file_proc, "{\n\"percentage\": %ld,\n", usage_percentage);
+    seq_printf(file_proc, "\"total_usage\":%u,\n", total_usage);
+    seq_printf(file_proc, "\"total_time_cpu\":%u,\n", total_time_cpu);
+    seq_printf(file_proc, "\"processes\":[\n");
+
+    int first_process = 1;
+
+    for_each_process(cpu) {
+        if (!first_process) {seq_printf(file_proc, ",\n");}
+        first_process = 0;
+        seq_printf(file_proc, "    {\n");
+        seq_printf(file_proc, "      \"pid\": %d,\n", cpu->pid);
+        seq_printf(file_proc, "      \"name\": \"%s\",\n", cpu->comm);
+        seq_printf(file_proc, "      \"state\": %u,\n", cpu->__state);
+        if (!list_empty(&cpu->children)) {
+            seq_printf(file_proc, "      \"child\": [\n");
+            traverse_children(file_proc, &cpu->children);
+            seq_printf(file_proc, "\n      ]");
+        } else {
+            seq_printf(file_proc, "      \"child\": []");
+        }
+
+        seq_printf(file_proc, "\n    }");
+    }
+
+    seq_printf(file_proc, "\n  ]\n");
+    seq_printf(file_proc, "}\n");
+
+    return 0;
+}
+
+static void traverse_children(struct seq_file *file_proc, struct list_head *children) {
+    struct list_head *lstProcess;
     struct task_struct *child;
-    struct process_info *child_node;
+    int first_child = 1;
 
-    list_for_each_entry(child, &parent->children, sibling) {
-        child_node = kmalloc(sizeof(struct process_info), GFP_KERNEL);
-        if (!child_node) {
-            printk(KERN_ERR "Error al asignar memoria para child_node\n");
-            return;
+    list_for_each(lstProcess, children) {
+        if (!first_child) { seq_printf(file_proc, ",\n");}
+        first_child = 0;
+
+        child = list_entry(lstProcess, struct task_struct, sibling);
+
+        seq_printf(file_proc, "        {\n");
+        seq_printf(file_proc, "          \"pid\": %d,\n", child->pid);
+        seq_printf(file_proc, "          \"name\": \"%s\",\n", child->comm);
+        seq_printf(file_proc, "          \"state\": %u,\n", child->__state);
+        seq_printf(file_proc, "          \"pidPadre\": %u,\n", child->parent->pid);
+        if (!list_empty(&child->children)) {
+            seq_printf(file_proc, "          \"child\": [\n");
+            traverse_children(file_proc, &child->children);
+            seq_printf(file_proc, "\n          ]");
+        } else {
+            seq_printf(file_proc, "          \"child\": []");
         }
-        INIT_LIST_HEAD(&child_node->children);
-        child_node->pid = child->pid;
-        strncpy(child_node->name, child->comm, TASK_COMM_LEN - 1);
-        child_node->rss = (child->mm) ? (get_mm_rss(child->mm) << PAGE_SHIFT) : 0;
-        child_node->uid = from_kuid(&init_user_ns, child->cred->user->uid);
-        list_add_tail(&child_node->children, &node->children);
-        agregar_hijos(child, child_node);
+        seq_printf(file_proc, "        }");
     }
 }
 
-static void inicializar_arbol(void) {
-    INIT_LIST_HEAD(&root.children);
-    root.pid = 0;
-    strncpy(root.name, "root", TASK_COMM_LEN - 1);
-    root.rss = 0;
-    root.uid = 0;
-    agregar_hijos(&init_task, &root);
+static int abrir_aproc(struct inode *inode, struct file *file)
+{
+    return single_open(file, escribir_a_proc, NULL);
 }
 
-static void imprimir_procesos(struct seq_file *archivo, struct process_info *node, int nivel) {
-    struct process_info *child_node;
-    list_for_each_entry(child_node, &node->children, children) {
-        int i;
-        for (i = 0; i < nivel; i++) {
-            seq_printf(archivo, "    ");
-        }
+static struct proc_ops archivo_operaciones = {
+    .proc_open = abrir_aproc,
+    .proc_read = seq_read};
 
-        seq_printf(archivo, "{\n");
-        for (i = 0; i < nivel + 1; i++) {
-            seq_printf(archivo, "    ");
-        }
-        seq_printf(archivo, "\"processId\": %d,\n", child_node->pid);
-        for (i = 0; i < nivel + 1; i++) {
-            seq_printf(archivo, "    ");
-        }
-        seq_printf(archivo, "\"PID\": %d,\n", child_node->pid);
-        for (i = 0; i < nivel + 1; i++) {
-            seq_printf(archivo, "    ");
-        }
-        seq_printf(archivo, "\"Name\": \"%s\",\n", child_node->name);
-        for (i = 0; i < nivel + 1; i++) {
-            seq_printf(archivo, "    ");
-        }
-        seq_printf(archivo, "\"RSS\": %lu,\n", child_node->rss);
-        for (i = 0; i < nivel + 1; i++) {
-            seq_printf(archivo, "    ");
-        }
-        seq_printf(archivo, "\"UID\": %d,\n", child_node->uid);
-        for (i = 0; i < nivel + 1; i++) {
-            seq_printf(archivo, "    ");
-        }
-
-        if (!list_empty(&child_node->children)) {
-            seq_printf(archivo, "\"children\": [\n");
-            imprimir_procesos(archivo, child_node, nivel + 1);
-            seq_printf(archivo, "\n");
-            for (i = 0; i < nivel + 1; i++) {
-                seq_printf(archivo, "    ");
-            }
-            seq_printf(archivo, "]");
-        } else {
-            seq_printf(archivo, "\"children\": []");
-        }
-
-        seq_printf(archivo, "\n");
-        for (i = 0; i < nivel; i++) {
-            seq_printf(archivo, "    ");
-        }
-        seq_printf(archivo, "}");
-
-        if (list_is_last(&child_node->children, &node->children)) {
-            seq_printf(archivo, "\n");
-        } else {
-            seq_printf(archivo, ",\n");
-        }
-    }
-}
-
-static int mostrar_informacion_cpu(struct seq_file *archivo, void *v) {
-    inicializar_arbol();
-    imprimir_procesos(archivo, &root, 0);
+static int __init modulo_init(void)
+{
+    proc_create("cpu_so1_1s2024", 0, NULL, &archivo_operaciones);
+    printk(KERN_INFO "Insertar Modulo CPU\n");
     return 0;
 }
 
-static int abrir_archivo(struct inode *inode, struct file *file)
-{
-    return single_open(file, mostrar_informacion_cpu, NULL);
-}
-
-static const struct proc_ops operaciones = {
-    .proc_open = abrir_archivo,
-    .proc_read = seq_read,
-    .proc_lseek = seq_lseek,
-    .proc_release = single_release,
-};
-
-static int __init cargar_modulo(void)
-{
-    proc_create("cpu_so1_1s2024", 0, NULL, &operaciones);
-    printk(KERN_INFO "Módulo CPU cargado exitosamente\n");
-    return 0;
-}
-
-static void __exit descargar_modulo(void)
+static void __exit modulo_cleanup(void)
 {
     remove_proc_entry("cpu_so1_1s2024", NULL);
-    printk(KERN_INFO "Módulo CPU descargado exitosamente\n");
+    printk(KERN_INFO "Remover Modulo CPU\n");
 }
 
-module_init(cargar_modulo);
-module_exit(descargar_modulo);
+module_init(modulo_init);
+module_exit(modulo_cleanup);
