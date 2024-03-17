@@ -11,6 +11,7 @@
 #include <linux/sched/cputime.h>
 #include <linux/timekeeping.h>
 #include <linux/time.h>
+#include<linux/slab.h>
 
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Módulo CPU - Laboratorio Sistemas Operativos 1");
