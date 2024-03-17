@@ -91,5 +91,7 @@ export const buildDotFromTree = (processes: Process[]): string => {
 
     dot += '}';
 
+    console.log(dot)
+
     return dot;
 }
