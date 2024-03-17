@@ -1,7 +1,68 @@
+import { useState } from "react";
+import Viz from 'viz.js';
+import { Module, render } from 'viz.js/full.render.js'
+
+import { GraphProps, buildSimulationGraph, getInfo } from "@/utils/utils";
+
 export default function Simulacion() {
+
+    const [pid, setPid] = useState<number | null>(null);
+    const [graph, setGraph] = useState<GraphProps>({
+        nodes: [{ id: 0, label: 'Start', color: 'green' }],
+        edges: []
+    })
+    const [graphDot, setGraphDot] = useState('')
+
+    const handleProcessState = async (state: string) => {
+        const response = await getInfo<{
+            pid: number;
+        }>(`/api/state/${state}`);
+        if (response) {
+            setPid(response.pid);
+        }
+
+        const newNodeId = graph.nodes.length;
+
+        const newGraphProps: GraphProps = {
+            nodes: [
+                ...graph.nodes,
+                { id: newNodeId, label: state, color: 'green' }
+            ],
+            edges: [
+                ...graph.edges,
+                { from: graph.nodes.length - 1, to: newNodeId, label: state }
+            ]
+        }
+
+        setGraph(newGraphProps);
+        const viz = new Viz({ Module, render });
+        const dot = buildSimulationGraph(newGraphProps);
+        const svg = await viz.renderString(dot, { format: 'svg' });
+        setGraphDot(svg);
+    }
+
     return (
         <div>
-            <h1 className="text-3xl font-semibold text-center">Simulación</h1>
+            <h1 className="text-3xl font-semibold text-center">Diagrama de Estados</h1>
+            {
+                pid && (
+                    <div>
+                        PID {pid}
+                    </div>
+                )
+            }
+            <div>
+                <span></span>
+                <button onClick={() => handleProcessState('start')}>Start</button>
+                <button onClick={() => handleProcessState('pause')}>Pause</button>
+                <button onClick={() => handleProcessState('stop')}>Stop</button>
+                <button onClick={() => handleProcessState('resume')}>Resume</button>
+            </div>
+            <div className="flex justify-center">
+                <div className="w-1/2">
+                    <div dangerouslySetInnerHTML={{ __html: graphDot }} />
+                </div>
+            </div>
         </div>
     );
 }

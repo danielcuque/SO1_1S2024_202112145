@@ -54,6 +54,15 @@ type CpuResponse struct {
 	Processes    []Process `json:"processes"`
 }
 
+type ProcessState string
+
+const (
+	Start ProcessState = "start"
+	Stop  ProcessState = "stop"
+	Ready ProcessState = "ready"
+	Kill  ProcessState = "kill"
+)
+
 func dbConnection() {
 	var errDb error
 	initDB.Do(func() {
@@ -171,12 +180,118 @@ func treeProcessHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(cpuInfo)
 }
 
+func StartProcess() (int, error) {
+	cmd := exec.Command("sleep", "infinity")
+	err := cmd.Start()
+	if err != nil {
+		return 0, fmt.Errorf("error al iniciar el proceso: %v", err)
+	}
+
+	return cmd.Process.Pid, nil
+}
+
+func StopProcess(pid int) error {
+
+	// Enviar señal SIGSTOP al proceso con el PID proporcionado
+	cmd := exec.Command("kill", "-SIGSTOP", strconv.Itoa(pid))
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("error al detener el proceso con PID %d", pid)
+	}
+
+	return nil
+}
+
+func ResumeProcess(pid int) error {
+
+	// Enviar señal SIGCONT al proceso con el PID proporcionado
+	cmd := exec.Command("kill", "-SIGCONT", strconv.Itoa(pid))
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("error al reanudar el proceso con PID %d", pid)
+	}
+
+	return nil
+}
+
+func KillProcess(pid int) error {
+	// Enviar señal SIGCONT al proceso con el PID proporcionado
+	cmd := exec.Command("kill", "-9", strconv.Itoa(pid))
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("error al finalizar el proceso con PID %d", pid)
+	}
+
+	return nil
+}
+
+func processHandler(w http.ResponseWriter, r *http.Request) {
+	state := ProcessState(strings.TrimPrefix(r.URL.Path, "/api/state/"))
+	var pid int
+	var err error
+
+	if state != Start {
+		pidStr := r.URL.Query().Get("pid")
+		if pid, err = strconv.Atoi(pidStr); err != nil {
+			http.Error(w, "PID inválido", http.StatusBadRequest)
+			return
+		}
+	}
+
+	var statusCode int
+	var responseData interface{}
+
+	switch state {
+	case Start:
+		pid, err := StartProcess()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		statusCode = http.StatusCreated
+		responseData = map[string]interface{}{"pid": pid}
+
+	case Stop:
+		if err := StopProcess(pid); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		statusCode = http.StatusOK
+		responseData = map[string]interface{}{"pid": pid}
+
+	case Ready:
+		if err := ResumeProcess(pid); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		statusCode = http.StatusOK
+		responseData = map[string]interface{}{"pid": pid}
+
+	case Kill:
+		if err := KillProcess(pid); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		statusCode = http.StatusOK
+		responseData = map[string]interface{}{"pid": pid}
+
+	default:
+		http.Error(w, "Estado no válido", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	json.NewEncoder(w).Encode(responseData)
+}
+
 func setupRoutes() {
 	initAPI.Do(func() {
 		http.HandleFunc("/api/ram", infoRamHandler)
 		http.HandleFunc("/api/cpu", infoCpuHandler)
 		http.HandleFunc("/api/historical", historicalDataHandler)
 		http.HandleFunc("/api/tree", treeProcessHandler)
+		http.HandleFunc("/api/state/", processHandler)
 	})
 }
 

@@ -20,6 +20,23 @@ export interface CpuResponse {
     processes: Process[];
 }
 
+export interface GraphProps {
+    nodes: Node[];
+    edges: Edge[];
+}
+
+export interface Node {
+    id: number;
+    label: string;
+    color: string;
+}
+
+export interface Edge {
+    from: number;
+    to: number;
+    label: string;
+}
+
 export const getInfo = async <T= any>(url: string): Promise<T> => {
     try {
         const response = await fetch(url, {
@@ -86,5 +103,17 @@ export const buildDotFromTree = (processes: Process[]): string => {
 
     dot += '}';
 
+    return dot;
+}
+
+export const buildSimulationGraph = (grahProps: GraphProps): string => {
+    let dot = 'digraph G {\n';
+    grahProps.nodes.forEach(node => {
+        dot += `${node.id} [label="${node.label}" color="${node.color}"];\n`;
+    });
+    grahProps.edges.forEach(edge => {
+        dot += `${edge.from} -> ${edge.to} [label="${edge.label}"];\n`;
+    });
+    dot += '}';
     return dot;
 }
