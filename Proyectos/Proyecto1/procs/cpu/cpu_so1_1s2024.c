@@ -78,7 +78,7 @@ static int mostrar_informacion_cpu(struct seq_file *archivo, void *v) {
         // Verificar si el proceso tiene hijos
         if (!list_empty(&cpu->children)) {
             seq_printf(archivo, "      \"children\": [\n");
-            imprimir_hijos(archivo, &cpu->children);
+            imprimir_hijos(archivo, cpu);
             seq_printf(archivo, "\n      ]");
         } else {
             seq_printf(archivo, "      \"children\": []");
