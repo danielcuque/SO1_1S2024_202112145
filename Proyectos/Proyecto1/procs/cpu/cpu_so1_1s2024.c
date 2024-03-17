@@ -12,127 +12,119 @@
 #include <linux/timekeeping.h>
 #include <linux/time.h>
 
-struct task_struct *cpu;
-unsigned long rss;
-
-
-
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Módulo CPU - Laboratorio Sistemas Operativos 1");
 MODULE_AUTHOR("Daniel Estuardo Cuque Ruíz");
 
-static void imprimir_hijos(struct seq_file *archivo, struct task_struct *parent);
+struct process_info {
+    int pid;
+    char name[TASK_COMM_LEN];
+    unsigned long rss;
+    int uid;
+    struct process_info *children;
+    int num_children;
+};
 
+static struct process_info root;
+
+// Esta función recorre recursivamente la lista de procesos hijos y los agrega a la estructura de árbol
+static void agregar_hijos(struct task_struct *parent, struct process_info *node) {
+    struct task_struct *child;
+    struct process_info *child_node;
+    int i = 0;
+
+    list_for_each_entry(child, &parent->children, sibling) {
+        child_node = &node->children[i++];
+        child_node->pid = child->pid;
+        strncpy(child_node->name, child->comm, TASK_COMM_LEN - 1);
+        child_node->rss = (child->mm) ? (get_mm_rss(child->mm) << PAGE_SHIFT) : 0;
+        child_node->uid = from_kuid(&init_user_ns, child->cred->user->uid);
+        child_node->children = NULL;
+        child_node->num_children = 0;
+        agregar_hijos(child, child_node); // Llamada recursiva para agregar los hijos de este proceso
+        node->num_children++;
+    }
+}
+
+// Esta función inicializa la estructura de árbol con el proceso raíz y llama a agregar_hijos para poblarla
+static void inicializar_arbol(void) {
+    INIT_LIST_HEAD(&root.children);
+    root.pid = 0; // PID 0 es el proceso init o systemd en sistemas modernos
+    strncpy(root.name, "root", TASK_COMM_LEN - 1);
+    root.rss = 0;
+    root.uid = 0;
+    root.children = NULL;
+    root.num_children = 0;
+    agregar_hijos(&init_task, &root);
+}
 
 static int mostrar_informacion_cpu(struct seq_file *archivo, void *v) {
-    uint64_t total_cpu_time_ns;
-    uint64_t total_usage_ns;
-    unsigned long cpu_porcentaje;
+    // Inicializar la estructura de árbol
+    inicializar_arbol();
 
-    total_cpu_time_ns = 0; 
-    total_usage_ns = 0;    
-    cpu_porcentaje=0;
-
-    for_each_process(cpu) {
-    uint64_t cpu_time_ns;
-    cpu_time_ns = cpu->utime + cpu->stime;
-    total_usage_ns += cpu_time_ns;
-    }
-
-    total_cpu_time_ns = ktime_to_ns(ktime_get());  // Obtén el tiempo total de CPU
-
-    if (total_cpu_time_ns > 0) {
-        cpu_porcentaje = (total_usage_ns * 100) / total_cpu_time_ns;
-    } else {
-        cpu_porcentaje = 0;  // Evitar división por cero
-    }
-
-    seq_printf(archivo, "{\n");
-    
-    seq_printf(archivo, "  \"cpuUsed\": %ld,\n", cpu_porcentaje);
-    seq_printf(archivo, "  \"processes\": [\n");
-
-    int first_process = 1;
-
-    for_each_process(cpu) {
-        if (!first_process) {
-            seq_printf(archivo, ",\n");
-        }
-        first_process = 0;
-
-        seq_printf(archivo, "    {\n");
-        seq_printf(archivo, "      \"processId\": %d,\n", cpu->pid);
-        seq_printf(archivo, "      \"PID\": %d,\n", cpu->pid);
-        seq_printf(archivo, "      \"Name\": \"%s\",\n", cpu->comm);
-        seq_printf(archivo, "      \"State\": %u,\n", cpu->__state);
-
-        if (cpu->mm) {
-            rss = get_mm_rss(cpu->mm) << PAGE_SHIFT;
-            seq_printf(archivo, "      \"RSS\": %lu,\n", rss);
-        } else {
-            seq_printf(archivo, "      \"RSS\": null,\n");
-        }
-
-        seq_printf(archivo, "      \"UID\": %u,\n", from_kuid(&init_user_ns, cpu->cred->user->uid));
-
-        // Verificar si el proceso tiene hijos
-        if (!list_empty(&cpu->children)) {
-            seq_printf(archivo, "      \"children\": [\n");
-            imprimir_hijos(archivo, cpu);
-            seq_printf(archivo, "\n      ]");
-        } else {
-            seq_printf(archivo, "      \"children\": []");
-        }
-
-        seq_printf(archivo, "\n    }");
-    }
-
-    seq_printf(archivo, "\n  ]\n");
-    seq_printf(archivo, "}\n");
+    // Imprimir la información de los procesos recursivamente
+    imprimir_procesos(archivo, &root, 0);
 
     return 0;
 }
 
-static void imprimir_hijos(struct seq_file *archivo, struct task_struct *parent) {
-    struct list_head *lstProcess;
-    struct task_struct *child;
-    int first_child = 1;
-
-    list_for_each(lstProcess, &parent->children) {
-        if (!first_child) {
-            seq_printf(archivo, ",\n");
-        }
-        first_child = 0;
-
-        child = list_entry(lstProcess, struct task_struct, sibling);
-
-        seq_printf(archivo, "        {\n");
-        seq_printf(archivo, "          \"childrenProcessId\": %d,\n", child->pid);
-        seq_printf(archivo, "          \"childrenPID\": %d,\n", child->pid);
-        seq_printf(archivo, "          \"childrenName\": \"%s\",\n", child->comm);
-        seq_printf(archivo, "          \"childrenState\": %u,\n", child->__state);
-
-        if (child->mm) {
-            rss = get_mm_rss(child->mm) << PAGE_SHIFT;
-            seq_printf(archivo, "          \"childrenRSS\": %lu,\n", rss);
-        } else {
-            seq_printf(archivo, "          \"childrenRSS\": null,\n");
-        }
-
-        seq_printf(archivo, "          \"childrenUID\": %u\n", from_kuid(&init_user_ns, child->cred->user->uid));
-
-        // Si el proceso tiene hijos, imprimir recursivamente los hijos de ese proceso
-        if (!list_empty(&child->children)) {
-            seq_printf(archivo, ",\n");
-            seq_printf(archivo, "          \"children\": [\n");
-            imprimir_hijos(archivo, child);
-            seq_printf(archivo, "          ]\n");
-        }
-
-        seq_printf(archivo, "        }");
+static void imprimir_procesos(struct seq_file *archivo, struct process_info *node, int nivel) {
+    int i;
+    for (i = 0; i < nivel; i++) {
+        seq_printf(archivo, "    ");
     }
-}
 
+    seq_printf(archivo, "{\n");
+    for (i = 0; i < nivel + 1; i++) {
+        seq_printf(archivo, "    ");
+    }
+    seq_printf(archivo, "\"processId\": %d,\n", node->pid);
+    for (i = 0; i < nivel + 1; i++) {
+        seq_printf(archivo, "    ");
+    }
+    seq_printf(archivo, "\"PID\": %d,\n", node->pid);
+    for (i = 0; i < nivel + 1; i++) {
+        seq_printf(archivo, "    ");
+    }
+    seq_printf(archivo, "\"Name\": \"%s\",\n", node->name);
+    for (i = 0; i < nivel + 1; i++) {
+        seq_printf(archivo, "    ");
+    }
+    seq_printf(archivo, "\"RSS\": %lu,\n", node->rss);
+    for (i = 0; i < nivel + 1; i++) {
+        seq_printf(archivo, "    ");
+    }
+    seq_printf(archivo, "\"UID\": %d,\n", node->uid);
+    for (i = 0; i < nivel + 1; i++) {
+        seq_printf(archivo, "    ");
+    }
+
+    if (node->num_children > 0) {
+        seq_printf(archivo, "\"children\": [\n");
+        for (i = 0; i < node->num_children; i++) {
+            imprimir_procesos(archivo, &node->children[i], nivel + 1);
+            if (i < node->num_children - 1) {
+                seq_printf(archivo, ",\n");
+            } else {
+                seq_printf(archivo, "\n");
+            }
+        }
+        for (i = 0; i < nivel + 1; i++) {
+            seq_printf(archivo, "    ");
+        }
+        seq_printf(archivo, "]");
+    } else {
+        seq_printf(archivo, "\"children\": []");
+    }
+
+    seq_printf(archivo, "\n");
+    for (i = 0; i < nivel; i++) {
+        seq_printf(archivo, "    ");
+    }
+    seq_printf(archivo, "}");
+
+    return;
+}
 
 // Función que se ejecutará cada vez que se lea el archivo con el comando CAT
 static int abrir_archivo(struct inode *inode, struct file *file)

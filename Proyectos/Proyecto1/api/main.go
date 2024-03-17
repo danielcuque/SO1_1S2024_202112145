@@ -32,23 +32,14 @@ type RamResponse struct {
 	Libre        int64 `json:"libre"`
 }
 
-type ChildProcess struct {
-	ChildrenProcessId int    `json:"childrenProcessId"`
-	ChildrenPID       int    `json:"childrenPID"`
-	ChildrenName      string `json:"childrenName"`
-	ChildrenState     int    `json:"childrenState"`
-	ChildrenRSS       int    `json:"childrenRSS"`
-	ChildrenUID       int    `json:"childrenUID"`
-}
-
 type Process struct {
-	ProcessId int            `json:"processId"`
-	PID       int            `json:"PID"`
-	Name      string         `json:"Name"`
-	State     int            `json:"State"`
-	RSS       int            `json:"RSS"`
-	UID       int            `json:"UID"`
-	Children  []ChildProcess `json:"children"`
+	ProcessId int       `json:"processId"`
+	PID       int       `json:"PID"`
+	Name      string    `json:"Name"`
+	State     int       `json:"State"`
+	RSS       int       `json:"RSS"`
+	UID       int       `json:"UID"`
+	Children  []Process `json:"children"`
 }
 
 type CpuResponse struct {

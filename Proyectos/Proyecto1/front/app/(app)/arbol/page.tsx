@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import Viz from 'viz.js';
 import { Module, render } from 'viz.js/full.render.js';
-import { CpuResponse, Process, getInfo } from '@/utils/utils';
+import { CpuResponse, Process, buildDotFromTree, getInfo } from '@/utils/utils';
 import { Listbox, Transition } from '@headlessui/react';
 
 
@@ -24,13 +24,8 @@ export default function Arbol() {
 
             setProcesses(treeResponse.processes);
 
-            const dot = `digraph G {
-                ${treeResponse.processes.map(process => {
-                return process.Children.map(child => {
-                    return `${process.PID} -> ${child.ChildrenPID}`;
-                }).join('\n');
-            }).join('\n')}
-            }`;
+            const dot = buildDotFromTree(treeResponse.processes);
+            
             const viz = new Viz({ Module, render });
             const svg = await viz.renderString(dot, { format: 'svg' });
             setTree(svg);

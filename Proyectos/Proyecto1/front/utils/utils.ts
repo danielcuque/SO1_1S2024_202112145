@@ -1,12 +1,3 @@
-export type ChildProcess = {
-    ChildrenProcessId: number;
-    ChildrenPID: number;
-    ChildrenName: string;
-    ChildrenState: number;
-    ChildrenRSS: number;
-    ChildrenUID: number;
-}
-
 export type Process = {
     ProcessId: number;
     PID: number;
@@ -14,7 +5,7 @@ export type Process = {
     State: number;
     RSS: number;
     UID: number;
-    Children: ChildProcess[];
+    Children: Process[];
 }
 
 export type CpuResponse = {
@@ -47,23 +38,33 @@ export const getInfo = async <T= any>(url: string): Promise<T> => {
 export const convertToGb = (value: number) => value / 1024 / 1024 / 1024;
 
 
-export const getAllProcessesWithChildren = (processes: Process[]): Process[] => {
-    const allProcesses: Process[] = [];
+export const buildDot = (process: Process): string =>{
+    let dot = '';
+    
+    // Agregar el nodo actual al texto DOT
+    dot += `  ${process.PID} [label="${process.Name}"];\n`;
+
+    // Si el proceso tiene hijos, agregar las relaciones entre nodos
+    if (process.Children && process.Children.length > 0) {
+        process.Children.forEach(child => {
+            dot += `  ${process.PID} -> ${child.PID};\n`;
+            // Llamar recursivamente a la función para el hijo actual
+            dot += buildDot(child);
+        });
+    }
+
+    return dot;
+}
+
+export const buildDotFromTree = (processes: Process[]): string => {
+    let dot = 'digraph G {\n';
+    
+    // Construir el texto DOT recursivamente para cada proceso raíz
     processes.forEach(process => {
-        allProcesses.push(process);
-        if (process.Children.length > 0) {
-            allProcesses.push(...getAllProcessesWithChildren(process.Children.map(child => {
-                return {
-                    ProcessId: child.ChildrenProcessId,
-                    PID: child.ChildrenPID,
-                    Name: child.ChildrenName,
-                    State: child.ChildrenState,
-                    RSS: child.ChildrenRSS,
-                    UID: child.ChildrenUID,
-                    Children: []
-                }
-            })));
-        }
+        dot += buildDot(process);
     });
-    return allProcesses;
+
+    dot += '}\n';
+
+    return dot;
 }
