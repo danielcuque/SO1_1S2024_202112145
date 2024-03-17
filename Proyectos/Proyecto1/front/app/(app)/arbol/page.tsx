@@ -17,6 +17,12 @@ export default function Arbol() {
         setInfo();
     }, []);
 
+    useEffect(() => {
+        if (currentProcess) {
+            rebuildTree();
+        }
+    }, [currentProcess]);
+
     const setInfo = async () => {
         try {
             const treeResponse = await getInfo<CpuResponse>('/api/tree');
@@ -34,6 +40,17 @@ export default function Arbol() {
         }
     }
 
+    const rebuildTree = async () => {
+        try {
+            const dot = buildDotFromTree(processes);
+            const viz = new Viz({ Module, render });
+            const svg = await viz.renderString(dot, { format: 'svg' });
+            setTree(svg);
+        } catch (error) {
+            console.error('Error al reconstruir el árbol:', error);
+        }
+    }
+
     return (
         <div>
             <h1 className="text-3xl font-semibold text-center">Árbol de procesos</h1>
@@ -47,7 +64,7 @@ export default function Arbol() {
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >
-                    <Listbox.Options>
+                    <Listbox.Options className="absolute z-10 w-1/2 py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
                         {processes.map(process => (
                             <Listbox.Option key={process.pid} value={process}>
                                 {process.name}

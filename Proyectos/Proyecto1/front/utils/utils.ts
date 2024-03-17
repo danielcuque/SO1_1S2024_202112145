@@ -69,15 +69,27 @@ export const buildDotChild = (pid: number, child: ProcessChild): string => {
     return dot;
 }
 
+export const buildDotFromProcess = (process: Process): string => {
+    let dot = 'digraph G {\n';
+    // Construir el nodo raíz
+    dot += 'root [label="root"];\n';
+    // Construir el DOT a partir del proceso específico
+    dot += buildDot(process);
+    dot += '}';
+    return dot;
+}
+
 export const buildDotFromTree = (processes: Process[]): string => {
     let dot = 'digraph G {\n';
+
+    // add root node
+    dot += 'root [label="root"];\n';
     
-    // Construir el texto DOT recursivamente para cada proceso raíz
     processes.forEach(process => {
         dot += buildDot(process);
     });
 
-    dot += '}\n';
+    dot += '}';
 
     return dot;
 }
