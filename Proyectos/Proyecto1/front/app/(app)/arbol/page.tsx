@@ -77,7 +77,7 @@ export default function Arbol() {
                                             className={`block truncate ${selected ? 'font-medium' : 'font-normal'
                                                 }`}
                                         >
-                                            {process.name}
+                                            {process.name} ({process.pid})
                                         </span>
                                     </>
                                 )}

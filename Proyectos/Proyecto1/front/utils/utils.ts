@@ -47,7 +47,7 @@ export const convertToGb = (value: number) => value / 1024 / 1024 / 1024;
 export const buildDot = (process: Process): string =>{
     let dot = '';
     // Construir el nodo para el proceso
-    dot += `${process.pid} [label="${process.name}"];\n`;
+    dot += `${process.pid} [label="${process.name} - ${process.pid}"];\n`;
     // Construir los nodos para los procesos hijos
     process.child.forEach(child => {
         dot += buildDotChild(process.pid, child);
@@ -58,7 +58,7 @@ export const buildDot = (process: Process): string =>{
 export const buildDotChild = (pid: number, child: ProcessChild): string => {
     let dot = '';
     // Construir el nodo para el proceso hijo
-    dot += `${child.pid} [label="${child.name}"];\n`;
+    dot += `${child.pid} [label="${child.name} - ${child.pid}"];\n`;
     // Construir la relación entre el proceso padre y el hijo
     dot += `${child.pidPadre} -> ${child.pid};\n`;
     // Construir los nodos para los procesos hijos del proceso hijo
