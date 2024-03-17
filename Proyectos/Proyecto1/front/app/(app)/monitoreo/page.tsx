@@ -39,9 +39,6 @@ export default function Monitoreo() {
         try {
             const ramResponse = await getInfo<InfoRam>('/api/ram');
             const cpuResponse = await getInfo<InfoCpu>('/api/cpu');
-
-            console.log(ramResponse, cpuResponse, 'AAAAAAAAAA');
-
         
             const usedCpu = cpuResponse.cpu;
             const freeCpu = 100 - usedCpu;

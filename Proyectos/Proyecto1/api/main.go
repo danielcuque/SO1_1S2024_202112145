@@ -32,6 +32,30 @@ type RamResponse struct {
 	Libre        int64 `json:"libre"`
 }
 
+type ChildProcess struct {
+	ChildrenProcessId int    `json:"childrenProcessId"`
+	ChildrenPID       int    `json:"childrenPID"`
+	ChildrenName      string `json:"childrenName"`
+	ChildrenState     int    `json:"childrenState"`
+	ChildrenRSS       int    `json:"childrenRSS"`
+	ChildrenUID       int    `json:"childrenUID"`
+}
+
+type Process struct {
+	ProcessId int            `json:"processId"`
+	PID       int            `json:"PID"`
+	Name      string         `json:"Name"`
+	State     int            `json:"State"`
+	RSS       int            `json:"RSS"`
+	UID       int            `json:"UID"`
+	Children  []ChildProcess `json:"children"`
+}
+
+type CpuResponse struct {
+	CpuUsed   float64   `json:"cpuUsed"`
+	Processes []Process `json:"processes"`
+}
+
 func dbConnection() {
 	var errDb error
 	initDB.Do(func() {
@@ -116,7 +140,7 @@ func getTableData(tableName string) ([]DbState, error) {
 	return state, nil
 }
 
-func getHistoricalData(w http.ResponseWriter, r *http.Request) {
+func historicalDataHandler(w http.ResponseWriter, r *http.Request) {
 	cpuState, err := getTableData("cpu_state")
 	if err != nil {
 		http.Error(w, "Error al obtener la información de la CPU", http.StatusInternalServerError)
@@ -136,11 +160,25 @@ func getHistoricalData(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{"cpu": cpuState, "ram": ramState})
 }
 
+func treeProcessHandler(w http.ResponseWriter, r *http.Request) {
+	cpuInfo, err := getCpuInfoAsJson()
+	if err != nil {
+		http.Error(w, "Error al obtener la información de la CPU", http.StatusInternalServerError)
+		fmt.Println(err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(cpuInfo)
+}
+
 func setupRoutes() {
 	initAPI.Do(func() {
 		http.HandleFunc("/api/ram", infoRamHandler)
 		http.HandleFunc("/api/cpu", infoCpuHandler)
-		http.HandleFunc("/api/historical", getHistoricalData)
+		http.HandleFunc("/api/historical", historicalDataHandler)
+		http.HandleFunc("/api/tree", treeProcessHandler)
 	})
 }
 
@@ -158,18 +196,31 @@ func insertData(value float64, tableName string) {
 	}
 }
 
-func getRamInfoAsJson() (RamResponse, error) {
-	ramResponseStr, _ := execCommand("cat /proc/ram_so1_1s2024")
-	var ramResponse RamResponse
-
-	err := json.Unmarshal([]byte(ramResponseStr), &ramResponse)
-
+func getInfoAsJson(filePath string, data interface{}) error {
+	output, err := execCommand("cat " + filePath)
 	if err != nil {
-		fmt.Println("Error al obtener la información de la RAM:", err)
+		return fmt.Errorf("error al obtener la información: %v", err)
+	}
+	if err := json.Unmarshal([]byte(output), &data); err != nil {
+		return fmt.Errorf("error al deserializar la información: %v", err)
+	}
+	return nil
+}
+
+func getRamInfoAsJson() (RamResponse, error) {
+	var ramResponse RamResponse
+	if err := getInfoAsJson("/proc/ram_so1_1s2024", &ramResponse); err != nil {
 		return RamResponse{}, err
 	}
-
 	return ramResponse, nil
+}
+
+func getCpuInfoAsJson() (CpuResponse, error) {
+	var cpuResponse CpuResponse
+	if err := getInfoAsJson("/proc/cpu_so1_1s2024", &cpuResponse); err != nil {
+		return CpuResponse{}, err
+	}
+	return cpuResponse, nil
 }
 
 func insertDataPeriodically() {
