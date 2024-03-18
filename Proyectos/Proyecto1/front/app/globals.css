@@ -6,3 +6,7 @@
 .card {
     @apply bg-white hover:shadow-md border-[1px] border-gray-200 rounded-xl p-4 h-full text-center items-center justify-center flex font-medium text-2xl;
 }
+
+.button {
+    @apply font-bold py-2 px-4 rounded shadow-md;
+}

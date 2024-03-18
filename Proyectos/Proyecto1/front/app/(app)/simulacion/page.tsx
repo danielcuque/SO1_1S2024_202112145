@@ -16,9 +16,10 @@ export default function Simulacion() {
     const [graphDot, setGraphDot] = useState('')
 
     const handleProcessState = async (state: string) => {
+        // if state is not start, we just send /state/pid
         const response = await getInfo<{
             pid: number;
-        }>(`/api/state/${state}`);
+        }>(`/state/${state}${pid ? `/${pid}` : ''}`);
         if (response) {
             setPid(response.pid);
         }
@@ -48,17 +49,17 @@ export default function Simulacion() {
             <h1 className="text-3xl font-semibold text-center">Diagrama de Estados</h1>
             {
                 pid && (
-                    <div>
+                    <div className="font-semibold">
                         PID {pid}
                     </div>
                 )
             }
-            <div>
+            <div className="w-full flex justify-between">
                 <span></span>
-                <button onClick={() => handleProcessState('start')}>Start</button>
-                <button onClick={() => handleProcessState('pause')}>Pause</button>
-                <button onClick={() => handleProcessState('stop')}>Stop</button>
-                <button onClick={() => handleProcessState('resume')}>Resume</button>
+                <button className="button" onClick={() => handleProcessState('start')}>Start</button>
+                <button className="button" onClick={() => handleProcessState('pause')}>Pause</button>
+                <button className="button" onClick={() => handleProcessState('stop')}>Stop</button>
+                <button className="button" onClick={() => handleProcessState('resume')}>Resume</button>
             </div>
             <div className="flex justify-center">
                 <div className="w-1/2">
