@@ -15,13 +15,15 @@ const colorsGraph: {
     kill: 'black'
 }
 
+const baseGraph: GraphProps = {
+    nodes: [{ id: 0, label: 'Start', color: 'green' }],
+    edges: []
+}
+
 export default function Simulacion() {
 
     const [pid, setPid] = useState<number | null>(null);
-    const [graph, setGraph] = useState<GraphProps>({
-        nodes: [{ id: 0, label: 'Start', color: 'green' }],
-        edges: []
-    })
+    const [graph, setGraph] = useState<GraphProps>(baseGraph)
     const [graphDot, setGraphDot] = useState('')
 
     const handleProcessState = async (state: string) => {
@@ -31,6 +33,10 @@ export default function Simulacion() {
         }>(`/api/state/${state}${pid ? `?pid=${pid}` : ''}`);
         if (response) {
             setPid(response.pid);
+        }
+
+        if (state === 'start') {
+            setGraph(baseGraph);
         }
 
         const newNodeId = graph.nodes.length;
