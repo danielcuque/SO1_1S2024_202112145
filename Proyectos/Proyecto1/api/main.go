@@ -232,7 +232,12 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 
 	if state != Start {
 		pidStr := r.URL.Query().Get("pid")
-		if pid, err = strconv.Atoi(pidStr); err != nil {
+		if pidStr == "" {
+			http.Error(w, "El parámetro 'pid' es requerido", http.StatusBadRequest)
+			return
+		}
+		pid, err = strconv.Atoi(pidStr)
+		if err != nil {
 			http.Error(w, "PID inválido", http.StatusBadRequest)
 			return
 		}
@@ -252,7 +257,8 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 		responseData = map[string]interface{}{"pid": pid}
 
 	case Stop:
-		if err := StopProcess(pid); err != nil {
+		err := StopProcess(pid)
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -260,7 +266,8 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 		responseData = map[string]interface{}{"pid": pid}
 
 	case Ready:
-		if err := ResumeProcess(pid); err != nil {
+		err := ResumeProcess(pid)
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -268,7 +275,8 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 		responseData = map[string]interface{}{"pid": pid}
 
 	case Kill:
-		if err := KillProcess(pid); err != nil {
+		err := KillProcess(pid)
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

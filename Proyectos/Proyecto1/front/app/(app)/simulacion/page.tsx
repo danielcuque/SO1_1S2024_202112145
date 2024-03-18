@@ -16,10 +16,10 @@ export default function Simulacion() {
     const [graphDot, setGraphDot] = useState('')
 
     const handleProcessState = async (state: string) => {
-        // if state is not start, we just send /state/pid
+        // if state is not start, we just send /api/state/${state}?pid=${pid}
         const response = await getInfo<{
             pid: number;
-        }>(`/api/state/${state}${state === 'start' ? '' : `/${pid}`}`);
+        }>(`/api/state/${state}${pid ? `?pid=${pid}` : ''}`);
         if (response) {
             setPid(response.pid);
         }
