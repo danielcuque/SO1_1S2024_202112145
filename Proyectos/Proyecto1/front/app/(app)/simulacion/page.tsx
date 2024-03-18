@@ -6,6 +6,15 @@ import { Module, render } from 'viz.js/full.render.js'
 
 import { GraphProps, buildSimulationGraph, getInfo } from "@/utils/utils";
 
+const colorsGraph: {
+    [key: string]: string;
+} = {
+    start: 'green',
+    stop: 'red',
+    ready: 'yellow',
+    kill: 'black'
+}
+
 export default function Simulacion() {
 
     const [pid, setPid] = useState<number | null>(null);
@@ -29,7 +38,7 @@ export default function Simulacion() {
         const newGraphProps: GraphProps = {
             nodes: [
                 ...graph.nodes,
-                { id: newNodeId, label: state, color: 'green' }
+                { id: newNodeId, label: state, color: colorsGraph[state] ?? 'blue' }
             ],
             edges: [
                 ...graph.edges,
@@ -57,9 +66,9 @@ export default function Simulacion() {
             <div className="w-full flex justify-between">
                 <span></span>
                 <button className="button" onClick={() => handleProcessState('start')}>Start</button>
-                <button className="button" onClick={() => handleProcessState('pause')}>Pause</button>
                 <button className="button" onClick={() => handleProcessState('stop')}>Stop</button>
-                <button className="button" onClick={() => handleProcessState('resume')}>Resume</button>
+                <button className="button" onClick={() => handleProcessState('ready')}>Ready</button>
+                <button className="button" onClick={() => handleProcessState('kill')}>Kill</button>
             </div>
             <div className="flex justify-center">
                 <div className="w-1/2">
