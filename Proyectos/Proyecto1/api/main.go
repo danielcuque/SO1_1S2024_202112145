@@ -67,8 +67,8 @@ func dbConnection() {
 	var errDb error
 	initDB.Do(func() {
 		// for develop use just docker container db
-		// db, errDb = sql.Open("mysql", "root:root@tcp(db:3306)/proyecto1")
-		db, errDb = sql.Open("mysql", "root:root@tcp(localhost:3306)/proyecto1")
+		db, errDb = sql.Open("mysql", "root:root@tcp(db:3306)/proyecto1")
+		// db, errDb = sql.Open("mysql", "root:root@tcp(localhost:3306)/proyecto1")
 		if errDb != nil {
 			fmt.Println("Error al conectar con la base de datos", errDb)
 			return
