@@ -19,7 +19,7 @@ export default function Simulacion() {
         // if state is not start, we just send /state/pid
         const response = await getInfo<{
             pid: number;
-        }>(`/state/${state}${pid ? `/${pid}` : ''}`);
+        }>(`/api/state/${state}${state === 'start' ? '' : `/${pid}`}`);
         if (response) {
             setPid(response.pid);
         }
