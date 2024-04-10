@@ -2,3 +2,5 @@
 
 ## Daniel Estuardo Cuque Ruíz
 ## 202112145
+
+### Comandos para proto
