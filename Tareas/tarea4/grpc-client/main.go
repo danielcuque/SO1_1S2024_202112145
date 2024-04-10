@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	pb "grpc/proto"
+	pb "grpc-client/proto"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
@@ -14,10 +14,10 @@ import (
 var ctx = context.Background()
 
 type Data struct {
-	Sede         string
-	Municipio    string
-	Departamento string
-	Partido      string
+	Name  string
+	Album string
+	Year  string
+	Rank  string
 }
 
 func insertData(c *fiber.Ctx) error {
@@ -28,10 +28,10 @@ func insertData(c *fiber.Ctx) error {
 	}
 
 	voto := Data{
-		Sede:         data["sede"],
-		Municipio:    data["municipio"],
-		Departamento: data["departamento"],
-		Partido:      data["partido"],
+		Name:  data["sede"],
+		Album: data["municipio"],
+		Year:  data["departamento"],
+		Rank:  data["partido"],
 	}
 
 	go sendServer(voto)
@@ -54,10 +54,10 @@ func sendServer(voto Data) {
 	}(conn)
 
 	ret, err := cl.ReturnInfo(ctx, &pb.RequestId{
-		Sede:         voto.Sede,
-		Municipio:    voto.Municipio,
-		Departamento: voto.Departamento,
-		Partido:      voto.Partido,
+		Name:  voto.Name,
+		Album: voto.Album,
+		Year:  voto.Year,
+		Rank:  voto.Rank,
 	})
 	if err != nil {
 		log.Fatalln(err)
