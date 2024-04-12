@@ -7,6 +7,7 @@ import (
 	pb "grpc-server/proto"
 	"log"
 	"net"
+	"os"
 
 	_ "github.com/go-sql-driver/mysql"
 	"google.golang.org/grpc"
@@ -31,17 +32,26 @@ type Data struct {
 }
 
 func mysqlConnect() {
-	// Cambia las credenciales según tu configuración de MySQL
-	dsn := "root:secret@tcp(localhost:3306)/clase9"
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbName := os.Getenv("DB_NAME")
+
+	fmt.Println(dbUser, dbPassword, dbHost, dbPort, dbName)
+
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPassword, dbHost, dbPort, dbName)
 
 	var err error
 	db, err = sql.Open("mysql", dsn)
 	if err != nil {
+		fmt.Println("Error al conectar a MySQL")
 		log.Fatalln(err)
 	}
 
 	err = db.Ping()
 	if err != nil {
+		fmt.Println("Error al hacer ping a MySQL")
 		log.Fatalln(err)
 	}
 
@@ -62,7 +72,7 @@ func (s *server) ReturnInfo(ctx context.Context, in *pb.RequestId) (*pb.ReplyInf
 }
 
 func insertMySQL(voto Data) {
-	query := "INSERT INTO votos (no_sede, municipio, departamento, partido) VALUES (?, ?, ?, ?)"
+	query := "INSERT INTO votos (name, album, year, rank) VALUES (?, ?, ?, ?)"
 	_, err := db.ExecContext(ctx, query, voto.Name, voto.Album, voto.Year, voto.Rank)
 	if err != nil {
 		log.Println("Error al insertar en MySQL:", err)
@@ -70,6 +80,8 @@ func insertMySQL(voto Data) {
 }
 
 func main() {
+	mysqlConnect()
+
 	listen, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalln(err)
@@ -77,9 +89,8 @@ func main() {
 	s := grpc.NewServer()
 	pb.RegisterGetInfoServer(s, &server{})
 
-	mysqlConnect()
-
 	if err := s.Serve(listen); err != nil {
 		log.Fatalln(err)
 	}
+
 }

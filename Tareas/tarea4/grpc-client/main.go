@@ -28,10 +28,10 @@ func insertData(c *fiber.Ctx) error {
 	}
 
 	voto := Data{
-		Name:  data["sede"],
-		Album: data["municipio"],
-		Year:  data["departamento"],
-		Rank:  data["partido"],
+		Name:  data["name"],
+		Album: data["album"],
+		Year:  data["year"],
+		Rank:  data["rank"],
 	}
 
 	go sendServer(voto)
