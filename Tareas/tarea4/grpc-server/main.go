@@ -10,6 +10,7 @@ import (
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 )
 
@@ -32,13 +33,15 @@ type Data struct {
 }
 
 func mysqlConnect() {
+	errEnv := godotenv.Load(".env")
+	if errEnv != nil {
+		log.Fatalln("Error al cargar el archivo .env")
+	}
 	dbUser := os.Getenv("DB_USER")
 	dbPassword := os.Getenv("DB_PASSWORD")
 	dbHost := os.Getenv("DB_HOST")
 	dbPort := os.Getenv("DB_PORT")
 	dbName := os.Getenv("DB_NAME")
-
-	fmt.Println(dbUser, dbPassword, dbHost, dbPort, dbName)
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPassword, dbHost, dbPort, dbName)
 
@@ -54,7 +57,6 @@ func mysqlConnect() {
 		fmt.Println("Error al hacer ping a MySQL")
 		log.Fatalln(err)
 	}
-
 	fmt.Println("Conexión a MySQL exitosa")
 }
 
@@ -72,7 +74,7 @@ func (s *server) ReturnInfo(ctx context.Context, in *pb.RequestId) (*pb.ReplyInf
 }
 
 func insertMySQL(voto Data) {
-	query := "INSERT INTO votos (name, album, year, rank) VALUES (?, ?, ?, ?)"
+	query := "INSERT INTO votos (name, album, year, `rank`) VALUES (?, ?, ?, ?)"
 	_, err := db.ExecContext(ctx, query, voto.Name, voto.Album, voto.Year, voto.Rank)
 	if err != nil {
 		log.Println("Error al insertar en MySQL:", err)

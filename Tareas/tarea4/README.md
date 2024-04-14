@@ -3,6 +3,8 @@
 ## Daniel Estuardo Cuque Ruíz
 ## 202112145
 
+[Video](https://drive.google.com/file/d/1_uWKO69GDTWlQ_eQsoaWJ3AummQvq8tp/view?usp=sharing)
+
 ### Comandos para proto
 
 ```bash
