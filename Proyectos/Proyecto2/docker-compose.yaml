@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  grpc-server:
+    build:
+      context: ./grpc-server
+      dockerfile: Dockerfile
+    container_name: grpc-server
+    image: danielcuque/grpc-server
+    ports:
+      - "3001:3001"
+
+  grpc-client:
+    build:
+      context: ./grpc-client
+      dockerfile: Dockerfile
+    container_name: grpc-client
+    image: danielcuque/grpc-client
+    ports:
+      - "3000:3000"
